@@ -1,0 +1,32 @@
+<div class="trade-container">
+  <!-- Chart Area -->
+  
+     <div class="tv-container" style="height:600px;">
+      <app-tradingview-widget
+  [symbol]="selectedSymbol"
+  [width]="1200"
+  [height]="600"
+  [theme]="'dark'">
+</app-tradingview-widget>
+
+      </div>
+
+
+  <!-- Lower Grid: Order Panel / OrderBook / RecentTrades -->
+  <div class="lower-panels">
+    <!-- Left Side: Order Panel -->
+    <div class="left-panel card shadow-sm">
+      <app-order-panel></app-order-panel>
+    </div>
+
+    <!-- Right Side: OrderBook + RecentTrades stacked -->
+    <div class="right-panel">
+      <div class="card shadow-sm mb-3">
+        <app-order-book></app-order-book>
+      </div>
+      <div class="card shadow-sm">
+        <app-recent-trades></app-recent-trades>
+      </div>
+    </div>
+  </div>
+</div>

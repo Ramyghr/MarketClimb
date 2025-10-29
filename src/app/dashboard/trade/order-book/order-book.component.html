@@ -1,0 +1,23 @@
+<div class="order-book-card">
+  <h4 class="book-title">{{ symbol }} Order Book</h4>
+
+  <div class="order-book-container">
+    <!-- Sell Orders -->
+    <div class="orders sell-orders">
+      <h5 class="order-label">Sell</h5>
+      <div *ngFor="let order of sellOrders" class="order-row">
+        <span class="price">{{ order.price }}</span>
+        <span class="quantity">{{ order.quantity }}</span>
+      </div>
+    </div>
+
+    <!-- Buy Orders -->
+    <div class="orders buy-orders">
+      <h5 class="order-label">Buy</h5>
+      <div *ngFor="let order of buyOrders" class="order-row">
+        <span class="price">{{ order.price }}</span>
+        <span class="quantity">{{ order.quantity }}</span>
+      </div>
+    </div>
+  </div>
+</div>

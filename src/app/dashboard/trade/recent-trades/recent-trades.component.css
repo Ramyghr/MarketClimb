@@ -1,0 +1,41 @@
+.recent-trades-card {
+  background-color: #161b22;
+  border-radius: 12px;
+  padding: 1rem;
+  color: #eaeaea;
+  margin-top: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.trades-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  color: #00c896;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.trades-container {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.trade-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-family: monospace;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.trade-row.buy .price {
+  color: #00c853;
+}
+
+.trade-row.sell .price {
+  color: #ff4d4d;
+}
+
+.trade-row:hover {
+  background-color: rgba(255,255,255,0.05);
+}

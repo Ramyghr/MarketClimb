@@ -1,0 +1,18 @@
+/* portfolio.component.css */
+.portfolio {
+  background: #161b22;
+  padding: 20px;
+  border-radius: 12px;
+  color: #f0f6fc;
+    margin-left: 2cm;
+  margin-top: 2cm;
+}
+table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+td, th { padding: 10px; text-align: center; }
+tr:hover { background-color: #1f6feb33; cursor: pointer; }
+.pos { color: #00e676; }
+.neg { color: #ff5252; }

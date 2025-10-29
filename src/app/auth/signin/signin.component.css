@@ -1,0 +1,89 @@
+.wrapper, .page-header {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.card-login .title {
+  color: #1b1a19da;           /* change text color *//* change font */
+  font-weight: 700;         /* make it bold */
+  letter-spacing: 1px;      /* optional spacing between letters */ 
+  font-size: 1.8rem;        /* adjust size */
+}
+
+.filter {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.container {
+  position: relative;
+  z-index: 2;
+}
+
+.card-login {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.card-login .title {
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+.input-group-prepend {
+  width: 50px; /* make space for icons */
+}
+
+.input-group-prepend .input-group-text {
+  background: transparent;
+  border: none;
+  text-align: center;
+}
+
+.input-group .form-control {
+  padding-left: 15px; /* some padding so text doesn't stick to icon */
+  height: 45px; /* bigger field height */
+}
+
+.input-group-focus input {
+  border-color: #f5365c !important;
+  box-shadow: 0 0 0 0.2rem rgba(245, 54, 92, 0.25) !important;
+}
+.nc-icon {
+  font-size: 1rem;        /* adjust icon size */
+  line-height: 1;
+   margin-top: 0.35cm;
+   margin-left: 0.5cm;  
+}
+
+.form-group-no-border {
+  border-radius: 30px;
+  margin-bottom: 15px;
+  border: 1px solid #d3d3d3;
+}
+
+.btn-round {
+  border-radius: 50px;
+}
+
+.social-line .btn {
+  margin: 0 5px;
+}
+
+.text-danger {
+  font-size: 0.85rem;
+}
+
+.heart {
+  color: #f5365c;
+}

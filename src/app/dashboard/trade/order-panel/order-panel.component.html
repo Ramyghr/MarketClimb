@@ -1,0 +1,67 @@
+<div class="order-panel-card">
+  <h4 class="panel-title">Trade Panel</h4>
+
+
+
+  <!-- Order Type -->
+  <div class="order-type mb-2">
+    <label>Order Type:</label>
+    <select [(ngModel)]="orderType" class="form-select" title="order-type">
+      <option value="market">Market</option>
+      <option value="limit">Limit</option>
+      <option value="stop">Stop-Limit</option>
+    </select>
+  </div>
+
+  <!-- Symbol & Price -->
+  <div class="mb-2">
+    <label>Symbol:</label>
+    <select [(ngModel)]="symbol" (change)="onSymbolChange($event)" class="form-select symbol-select" title="symbol">
+      <optgroup label="📈 Stock Indices">
+        <option value="NASDAQ:TSLA">TSLA - Tesla</option>
+        <option value="NASDAQ:AAPL">AAPL - Apple</option>
+        <option value="NYSE:SPX">S&P 500</option>
+      </optgroup>
+      <optgroup label="💱 Forex">
+        <option value="FX:EURUSD">EUR/USD</option>
+        <option value="FX:GBPUSD">GBP/USD</option>
+      </optgroup>
+      <optgroup label="🪙 Crypto">
+        <option value="BINANCE:BTCUSDT">BTC/USDT</option>
+        <option value="BINANCE:ETHUSDT">ETH/USDT</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <div *ngIf="orderType !== 'market'" class="mb-2">
+    <label>Price:</label>
+    <input type="number" [(ngModel)]="price" class="form-control" placeholder="Enter price">
+  </div>
+
+  <!-- Quantity -->
+  <div class="mb-2">
+    <label>Quantity:</label>
+    <input type="number" [(ngModel)]="quantity" class="form-control" placeholder="0">
+  </div>
+
+  <!-- Stop-Loss / Take-Profit -->
+  <div *ngIf="orderType==='stop'" class="mb-2">
+    <label>Stop-Loss:</label>
+    <input type="number" [(ngModel)]="stopLoss" class="form-control" placeholder="Stop-Loss price">
+  </div>
+
+  <div *ngIf="orderType==='stop'" class="mb-2">
+    <label>Take-Profit:</label>
+    <input type="number" [(ngModel)]="takeProfit" class="form-control" placeholder="Take-Profit price">
+  </div>
+
+  <!-- Total -->
+  <div class="mb-3 total-display">
+    <span>Total:</span> <span>{{calculateTotal() | number:'1.2-2'}}</span>
+  </div>
+<div class="d-flex gap-2">
+    <button class="btn buy-btn w-50 btn-success" (click)="buy()" [disabled]="quantity<=0">Buy</button>
+    <button class="btn sell-btn w-50" (click)="sell()" [disabled]="quantity<=0">Sell</button>
+  </div>
+</div>
+

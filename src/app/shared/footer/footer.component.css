@@ -1,0 +1,24 @@
+.footer {
+  padding: 1.5rem 0;
+  font-size: 0.875rem;
+  background-color:  #000000ff;
+}
+
+.footer a {
+  color: #ffffffff;
+  margin-right: 1rem;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #197f8dff;
+  text-decoration: underline;
+}
+
+.footer .credits {
+  font-weight: 500;
+}
+
+.footer .heart {
+  color: #ff4d4d;
+}

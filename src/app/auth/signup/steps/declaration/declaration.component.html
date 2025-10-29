@@ -1,0 +1,36 @@
+<form [formGroup]="declarationForm">
+
+  <!-- Risk Disclosure -->
+  <div class="form-check mb-2">
+    <label class="form-check-label">
+      <input type="checkbox" class="form-check-input" formControlName="riskAcknowledged">
+      I acknowledge the risks involved in trading
+      <span class="form-control-feedback text-danger" *ngIf="declarationForm.get('riskAcknowledged')?.invalid && declarationForm.get('riskAcknowledged')?.touched">
+        You must acknowledge the risks
+      </span>
+    </label>
+  </div>
+
+  <!-- Terms & Conditions -->
+  <div class="form-check mb-3">
+    <label class="form-check-label">
+      <input type="checkbox" class="form-check-input" formControlName="termsAccepted">
+      I agree to the Terms & Conditions
+      <span class="form-control-feedback text-danger" *ngIf="declarationForm.get('termsAccepted')?.invalid && declarationForm.get('termsAccepted')?.touched">
+        You must accept the terms
+      </span>
+    </label>
+  </div>
+
+  <!-- Signature Pad -->
+  <div class="mb-3">
+    <label>Signature (optional)</label>
+    <div class="signature-container border" style="height:200px;">
+      <canvas #signaturePad class="w-100 h-100"></canvas>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm mt-2" (click)="clearSignature()">Clear Signature</button>
+  </div>
+
+  
+
+</form>

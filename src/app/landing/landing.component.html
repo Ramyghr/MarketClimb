@@ -1,0 +1,124 @@
+<!-- Hero Section -->
+<section class="hero">
+  <video autoplay muted loop class="hero-video">
+    <source src="assets/videos/hero-video.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1 class="hero-title" data-aos="fade-down">Welcome to Market Climb</h1>
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+      Experience the future of trading and finance.
+    </p>
+    <a routerLink="/login" class="btn btn-primary btn-lg" data-aos="fade-up" data-aos-delay="400">
+      Get Started
+    </a>
+  </div>
+</section>
+
+
+<!-- Features Section -->
+<section class="features py-5">
+  <div class="container text-center">
+    <h2 data-aos="fade-right">Our Features</h2>
+    <p data-aos="fade-left" data-aos-delay="200">Interactive charts, simulations, and real-time data for investors.</p>
+    <div class="row mt-5">
+      <!-- Original 3 Features -->
+      <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="400">
+        <div class="feature-card p-4 shadow-sm">
+          <i class="nc-icon nc-chart-bar-32 fa-2x mb-3"></i>
+          <h5>Real-time Charts</h5>
+          <p>Track the market live with interactive charts.</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="600">
+        <div class="feature-card p-4 shadow-sm">
+          <i class="nc-icon nc-settings-gear-65 fa-2x mb-3"></i>
+          <h5>Simulations</h5>
+          <p>Simulate cash flow and investment strategies easily.</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="800">
+        <div class="feature-card p-4 shadow-sm">
+          <i class="nc-icon nc-bank fa-2x mb-3"></i>
+          <h5>Portfolio Management</h5>
+          <p>Monitor and manage your investments efficiently.</p>
+        </div>
+      </div>
+
+      <!-- 3 New Features -->
+      <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="1000">
+        <div class="feature-card p-4 shadow-sm">
+          <i class="nc-icon nc-tap-01 fa-2x mb-3"></i>
+          <h5>Mobile Trading</h5>
+          <p>Trade from anywhere with our mobile app.</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="1200">
+        <div class="feature-card p-4 shadow-sm">
+          <i class="nc-icon nc-money-coins fa-2x mb-3"></i>
+          <h5>Risk Analysis</h5>
+          <p>Assess risks with advanced analytics and simulations.</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4" data-aos="zoom-in" data-aos-delay="1400">
+        <div class="feature-card p-4 shadow-sm">
+          <i class="nc-icon nc-badge fa-2x mb-3"></i>
+          <h5>Gamification</h5>
+          <p>Track achievements, streaks, and compete with others.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Live Asset Ticker Section -->
+<section class="live-assets-ticker py-3" style="background: linear-gradient(135deg,#0b1f26,#145a73); color:#fff;">
+  <div class="container-fluid">
+    <div class="ticker-wrapper" data-aos="fade-up">
+      <div class="ticker-item" *ngFor="let asset of assets">
+        <span class="asset-name">{{ asset.name }}</span>
+        <span class="asset-price">{{ asset.price | currency:asset.currency }}</span>
+        <span class="asset-change" [ngClass]="{'positive': asset.change >= 0, 'negative': asset.change < 0}">
+          {{ asset.change >= 0 ? '+' : '' }}{{ asset.change }}%
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials py-5">
+  <div class="container text-center">
+    <h2 data-aos="fade-right">What Our Users Say</h2>
+    <div class="row mt-5">
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+        <div class="testimonial-card p-4 shadow-sm">
+          <div class="testimonial-avatar-wrapper mb-3">
+          <img src="assets/img/faces/erik-lucatero-2.jpg" class="testimonial-avatar mb-3" alt="User Photo">
+          </div>
+          <p>"Market Climb helped me understand trading in a completely new way."</p>
+          <h6>- John Doe</h6>
+        </div>
+      </div>
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="500">
+        <div class="testimonial-card p-4 shadow-sm">
+          <div class="testimonial-avatar-wrapper mb-3">
+          <img src="assets/img/faces/kaci-baum-2.jpg" class="testimonial-avatar mb-3" alt="User Photo">
+          </div>
+          <p>"The simulations and charts are top-notch and easy to use."</p>
+          <h6>- Jane Smith</h6>
+        </div>
+      </div>
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="700">
+        <div class="testimonial-card p-4 shadow-sm">
+          <div class="testimonial-avatar-wrapper mb-3">
+          <img src="assets/img/faces/clem-onojeghuo-2.jpg" class="testimonial-avatar mb-3" alt="User Photo">
+          </div>
+          <p>"I finally feel confident in managing my portfolio."</p>
+          <h6>- Mike Lee</h6>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,54 @@
+<div class="signup-page">
+
+  <app-header [navbarSolid]="true"></app-header>
+
+  <div class="page-header" style="background-image: url('/assets/img/login-image.jpg');">
+    <div class="filter"></div>
+    <div class="container">
+      <div class="row justify-content-center">
+
+        <!-- Sidebar (Left Column) -->
+        <div class="col-lg-3 col-md-4">
+          <div class="sidebar-steps p-3">
+            <ul class="steps-list">
+              <li *ngFor="let s of steps" 
+                  [class.active]="step === s.number" 
+                  [class.completed]="isStepCompleted(s.number)">
+                <span class="step-number">{{ s.number }}</span>
+                <span class="step-label">{{ s.name }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Form Card (Right Column) -->
+        <div class="col-lg-6 col-md-8">
+          <div class="card card-login p-4">
+
+            <h3 class="title text-center mb-4" style="font-weight: 700; color: #144260;">Create Your Account</h3>
+
+            <!-- Step Components -->
+            <app-personal-details *ngIf="step === 1" (stepCompleted)="nextStep($event, 1)"></app-personal-details>
+            <app-further-info *ngIf="step === 2" (stepCompleted)="nextStep($event, 2)"></app-further-info>
+            <app-account-config *ngIf="step === 3" (stepCompleted)="nextStep($event, 3)"></app-account-config>
+            <app-declaration *ngIf="step === 4" (stepCompleted)="nextStep($event, 4)"></app-declaration>
+            <app-start-trading *ngIf="step === 5" [signupData]="signupData" (finishSignup)="finishSignup()"></app-start-trading>
+
+            <!-- Navigation Buttons -->
+            <div class="d-flex justify-content-between mt-3">
+              <button class="btn btn-secondary" (click)="previousStep()" [disabled]="step === 1">Previous</button>
+              <button class="btn btn-primary" (click)="nextStep(null, step)" [disabled]="step === steps.length">Next</button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <footer class="footer register-footer text-center mt-3">
+        &copy; {{ currentYear }} MarketClimb <i class="fa fa-heart heart"></i>
+      </footer>
+
+    </div>
+  </div>
+</div>

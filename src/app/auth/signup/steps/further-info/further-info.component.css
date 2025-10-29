@@ -1,0 +1,44 @@
+.id-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.id-preview {
+  width: 100%;
+  max-width: 300px; /* max width to fit in panel */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.id-preview img {
+  width: 100%;
+  height: auto; /* maintain aspect ratio */
+  display: block;
+}
+.further-info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.id-upload, .map-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.id-preview, .map-preview img {
+  width: 100%;
+  max-width: 300px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  object-fit: contain;
+}
+
+input.form-control, select.form-control {
+  margin-bottom: 15px;
+}

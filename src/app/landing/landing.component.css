@@ -1,0 +1,214 @@
+/* === Hero Section === */
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.hero-overlay {
+  position: absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.5);
+  z-index: -1;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+}
+
+/* === Features Section === */
+.features {
+  color: #fff;
+  background: linear-gradient(135deg,#030404,#145a73);
+}
+
+.features .feature-card {
+  border-radius: 15px;
+  background: linear-gradient(135deg,#145a73,#0b1f26);
+  color: #fff;
+  padding: 30px;
+  margin-bottom: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
+}
+
+.features .feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.features .feature-card i {
+  color: #00ffcc;
+  margin-bottom: 15px;
+}
+
+.features .feature-card h5 {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.features .feature-card p {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* === Testimonials Section === */
+.testimonials {
+  background: linear-gradient(135deg,#0b1f26,#145a73);
+  color: #fff;
+}
+
+.testimonials .testimonial-card {
+  border-radius: 15px;
+  background: linear-gradient(135deg,#145a73,#0b1f26);
+  color: #fff;
+  padding: 30px;
+  margin-bottom: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.testimonials .testimonial-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.testimonials .testimonial-card p {
+  font-size: 1rem;
+  margin-bottom: 15px;
+}
+
+.testimonials .testimonial-card h6 {
+  font-weight: 700;
+  color: #00ffcc;
+}
+
+/* === Pricing Section === */
+.pricing {
+  background: linear-gradient(135deg,#030404,#145a73);
+  color: #fff;
+}
+
+.pricing .pricing-card {
+  border-radius: 15px;
+  background: linear-gradient(135deg,#145a73,#0b1f26);
+  color: #fff;
+  padding: 30px;
+  margin-bottom: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
+}
+
+.pricing .pricing-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.pricing .pricing-card h5 {
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.pricing .pricing-card .price {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.pricing .pricing-card ul {
+  list-style: none;
+  padding-left: 0;
+  text-align: left;
+}
+
+.pricing .pricing-card ul li::before {
+  content: "✓";
+  margin-right: 8px;
+  color: #00ffcc;
+}
+
+.pricing .pricing-card a.btn {
+  border-radius: 50px;
+  margin-top: 15px;
+}
+.testimonial-avatar-wrapper {
+  width: 80px;      /* size of the placeholder */
+  height: 80px;
+  border-radius: 50%; /* makes it circular */
+  overflow: hidden;   /* crops the image to the circle */
+  margin: 0 auto;     /* center it horizontally */
+  border: 2px solid #fff; /* optional border */
+}
+
+.testimonial-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* makes the image fill the container without stretching */
+}
+.live-assets-ticker {
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: 'Roboto', sans-serif;
+}
+
+.ticker-wrapper {
+  display: flex;
+  animation: scrollTicker 20s linear infinite;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  margin-right: 50px;
+  font-size: 1rem;
+}
+
+.asset-name {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+.asset-price {
+  margin-right: 10px;
+}
+
+.asset-change.positive {
+  color: #00ff99;
+}
+
+.asset-change.negative {
+  color: #ff4d4d;
+}
+
+@keyframes scrollTicker {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}

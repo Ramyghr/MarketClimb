@@ -1,0 +1,35 @@
+<div class="text-center mt-4">
+
+  <h3>All Set!</h3>
+  <p>Here’s a summary of your account:</p>
+
+  <div class="card mx-auto" style="max-width:500px;">
+    <div class="card-body text-left">
+
+      <h5 class="card-title">Personal Details</h5>
+      <p>Name: {{ signupData.personal?.firstName }} {{ signupData.personal?.lastName }}</p>
+      <p>Email: {{ signupData.personal?.email }}</p>
+
+      <h5 class="card-title">Further Info</h5>
+      <p>Address: {{ signupData.further?.address }}</p>
+      <p>Phone: {{ signupData.further?.phone }}</p>
+      <p>Country: {{ signupData.further?.country }}</p>
+
+      <h5 class="card-title">Account Config</h5>
+      <p>Account Type: {{ signupData.accountConfig?.accountType }}</p>
+      <p>Base Currency: {{ signupData.accountConfig?.baseCurrency }}</p>
+      <p>Leverage: 1:{{ signupData.accountConfig?.leverage }}</p>
+
+      <h5 class="card-title">Declaration</h5>
+      <p>Risk acknowledged: {{ signupData.declaration?.riskAcknowledged ? 'Yes' : 'No' }}</p>
+      <p>Terms accepted: {{ signupData.declaration?.termsAccepted ? 'Yes' : 'No' }}</p>
+      <div *ngIf="signupData.declaration?.signature">
+        <p>Signature:</p>
+        <img [src]="signupData.declaration.signature" alt="Signature" class="img-fluid border">
+      </div>
+
+    </div>
+  </div>
+
+  <button class="btn btn-success btn-round mt-3" (click)="goToDashboard()">Start Trading</button>
+</div>

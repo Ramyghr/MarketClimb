@@ -1,0 +1,58 @@
+<form [formGroup]="configForm" class="paper-kit-form">
+
+  <!-- Account Type Buttons -->
+  <div class="row mb-3">
+    <div class="col-md-12">
+      <label>Account Type</label>
+      <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+        <label class="btn btn-primary" 
+               *ngFor="let type of accountTypes"
+               [class.active]="selectedAccountType === type"
+               (click)="selectedAccountType = type; configForm.get('accountType')?.setValue(type)">
+          <input type="radio" [value]="type" [checked]="selectedAccountType === type"> {{ type }}
+        </label>
+      </div>
+      <div class="form-control-feedback" *ngIf="configForm.get('accountType')?.invalid && configForm.get('accountType')?.touched">
+        Account Type is required
+      </div>
+    </div>
+  </div>
+
+  <!-- Base Currency Buttons -->
+  <div class="row mb-3">
+    <div class="col-md-12">
+      <label>Base Currency</label>
+      <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+        <label class="btn btn-info" 
+               *ngFor="let c of currencies"
+               [class.active]="selectedCurrency === c"
+               (click)="selectedCurrency = c; configForm.get('baseCurrency')?.setValue(c)">
+          <input type="radio" [value]="c" [checked]="selectedCurrency === c"> {{ c }}
+        </label>
+      </div>
+      <div class="form-control-feedback" *ngIf="configForm.get('baseCurrency')?.invalid && configForm.get('baseCurrency')?.touched">
+        Base Currency is required
+      </div>
+    </div>
+  </div>
+
+  <!-- Leverage Slider -->
+  <div class="row mb-3">
+    <div class="col-md-12">
+      <label>Leverage: {{ leverageLabels[leverageValues.indexOf(selectedLeverage)] }}</label>
+      <input type="range" class="custom-range" title="range"
+             min="0" max="{{leverageValues.length - 1}}" 
+             [value]="leverageValues.indexOf(selectedLeverage)"
+             (input)="onLeverageChange($event)">
+      <div class="d-flex justify-content-between mt-1">
+        <span *ngFor="let l of leverageLabels">{{ l }}</span>
+      </div>
+      <div class="form-control-feedback" *ngIf="configForm.get('leverage')?.invalid && configForm.get('leverage')?.touched">
+        Leverage is required
+      </div>
+    </div>
+  </div>
+
+  
+
+</form>

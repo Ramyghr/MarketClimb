@@ -1,0 +1,20 @@
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar-container" 
+       [class.expanded]="sidebarExpanded" 
+       (mouseenter)="sidebarExpanded = true" 
+       (mouseleave)="sidebarExpanded = false">
+    <app-sidebar></app-sidebar>
+  </div>
+
+  <!-- Main area -->
+  <div class="main-area">
+    <app-header></app-header>
+
+    <div class="dashboard-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+</div>

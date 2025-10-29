@@ -1,0 +1,11 @@
+<div class="recent-trades-card">
+  <h4 class="trades-title">{{ symbol }} Recent Trades</h4>
+
+  <div class="trades-container">
+    <div *ngFor="let trade of trades" class="trade-row" [ngClass]="trade.side">
+      <span class="time">{{ trade.time }}</span>
+      <span class="price">{{ trade.price }}</span>
+      <span class="quantity">{{ trade.quantity }}</span>
+    </div>
+  </div>
+</div>
