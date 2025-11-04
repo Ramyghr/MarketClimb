@@ -1,0 +1,265 @@
+<div class="community-container">
+  
+  <!-- Header -->
+  <div class="community-header">
+    <h1 class="page-title">
+      <i></i>Community Hub
+    </h1>
+    <p class="page-subtitle">Connect, share, and learn from fellow traders</p>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'feed'"
+      (click)="switchTab('feed')">
+      <i ></i> Feed
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'leaderboard'"
+      (click)="switchTab('leaderboard')">
+      <i ></i> Leaderboard
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'forum'"
+      (click)="switchTab('forum')">
+      <i ></i> Forum
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'challenges'"
+      (click)="switchTab('challenges')">
+      <i ></i> Challenges
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+
+    <!-- FEED TAB -->
+    <div *ngIf="activeTab === 'feed'" class="feed-content">
+      
+      <!-- Create Post Card -->
+      <div class="create-post-card">
+        <div class="post-input-wrapper">
+          <img src="https://i.pravatar.cc/150?img=68" alt="Your avatar" class="user-avatar">
+          <textarea 
+            [(ngModel)]="newPostContent"
+            placeholder="Share your thoughts, trades, or analysis..."
+            class="post-input"
+            rows="3"></textarea>
+        </div>
+        <div class="post-actions">
+          <div class="post-options">
+            <button class="option-btn"><i class="fas fa-image"></i> Image</button>
+            <button class="option-btn"><i class="fas fa-chart-line"></i> Trade</button>
+            <button class="option-btn"><i class="fas fa-poll"></i> Poll</button>
+          </div>
+          <button 
+            class="btn-post" 
+            (click)="createPost()"
+            [disabled]="!newPostContent.trim()">
+            Post
+          </button>
+        </div>
+      </div>
+
+      <!-- Posts Feed -->
+      <div class="posts-feed">
+        <div *ngFor="let post of posts" class="post-card">
+          <!-- Post Header -->
+          <div class="post-header">
+            <img [src]="post.user.avatar" [alt]="post.user.username" title="{{ post.user.username || 'User avatar' }}" class="post-avatar">
+            <div class="post-user-info">
+              <div class="user-name">
+                {{ post.user.username }}
+                <i *ngIf="post.user.verified" class="fas fa-check-circle verified"></i>
+              </div>
+              <div class="post-meta">
+                <span class="post-time">{{ getTimeAgo(post.timestamp) }}</span>
+                <span class="rank-badge">{{ getRankBadge(post.user.rank) }}</span>
+              </div>
+            </div>
+            <button class="post-menu-btn" title="button">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+
+          <!-- Post Content -->
+          <div class="post-content">
+            <p>{{ post.content }}</p>
+
+            <!-- Trade Data (if applicable) -->
+            <div *ngIf="post.tradeData" class="trade-info">
+              <div class="trade-header">
+                <span class="trade-symbol">{{ post.tradeData.symbol }}</span>
+                <span class="trade-side" [ngClass]="post.tradeData.side">
+                  {{ post.tradeData.side === 'buy' ? '📈 BUY' : '📉 SELL' }}
+                </span>
+              </div>
+              <div class="trade-details">
+                <div class="detail-item">
+                  <span class="detail-label">Entry Price</span>
+                  <span class="detail-value">${{ post.tradeData.price | number:'1.2-2' }}</span>
+                </div>
+                <div *ngIf="post.tradeData.profit" class="detail-item">
+                  <span class="detail-label">Profit</span>
+                  <span class="detail-value profit">${{ post.tradeData.profit | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Post Actions -->
+          <div class="post-actions-bar">
+            <button class="action-btn like-btn" (click)="likePost(post.id)" [class.liked]="post.isLiked">
+              <span class="action-icon">{{ post.isLiked ? '❤️' : '🤍' }}</span>
+              <span class="action-count">{{ post.likes }}</span>
+            </button>
+            <button class="action-btn comment-btn">
+              <span class="action-icon">💬</span>
+              <span class="action-count">{{ post.comments }}</span>
+            </button>
+            <button class="action-btn share-btn">
+              <span class="action-icon">📤</span>
+              <span class="action-count">{{ post.shares }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD TAB -->
+    <div *ngIf="activeTab === 'leaderboard'" class="leaderboard-content">
+      <div class="leaderboard-header">
+        <h3>Top Traders This Month</h3>
+        <div class="filter-buttons">
+          <button class="filter-btn active">All Time</button>
+          <button class="filter-btn">This Month</button>
+          <button class="filter-btn">This Week</button>
+        </div>
+      </div>
+
+      <div class="leaderboard-list">
+        <div *ngFor="let user of leaderboard" class="leaderboard-item" [class.top-three]="user.rank <= 3">
+          <div class="rank-badge-large">{{ getRankBadge(user.rank) }}</div>
+          
+          <img [src]="user.avatar" [alt]="user.username" title="{{ user.username || 'User avatar' }}"class="leader-avatar">
+          
+          <div class="leader-info">
+            <div class="leader-name">
+              {{ user.username }}
+              <i *ngIf="user.verified" class="fas fa-check-circle verified"></i>
+            </div>
+            <div class="leader-stats">
+              <span class="stat">{{ user.trades }} trades</span>
+              <span class="stat">{{ user.winRate }}% win rate</span>
+            </div>
+          </div>
+
+          <div class="leader-performance">
+            <div class="profit-amount">${{ user.profit | number:'1.0-0' }}</div>
+            <div class="profit-percent positive">+{{ user.profitPercent | number:'1.1-1' }}%</div>
+          </div>
+
+          <button class="follow-btn">
+            <i></i> Follow
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORUM TAB -->
+    <div *ngIf="activeTab === 'forum'" class="forum-content">
+      <div class="forum-header">
+        <h3>Discussion Threads</h3>
+        <button class="btn-new-thread">
+          <i></i> New Thread
+        </button>
+      </div>
+
+      <div class="forum-categories">
+        <button class="category-btn active">All</button>
+        <button class="category-btn">Strategies</button>
+        <button class="category-btn">Education</button>
+        <button class="category-btn">General</button>
+        <button class="category-btn">News</button>
+      </div>
+
+      <div class="threads-list">
+        <div *ngFor="let thread of threads" class="thread-item">
+          <div class="thread-icon">
+            <i class="fas fa-comments"></i>
+          </div>
+          
+          <div class="thread-content">
+            <div class="thread-title-row">
+              <h4 class="thread-title">
+                <i *ngIf="thread.isPinned" class="fas fa-thumbtack pinned"></i>
+                <i *ngIf="thread.isHot" class="fas fa-fire hot"></i>
+                {{ thread.title }}
+              </h4>
+              <span class="thread-category">{{ thread.category }}</span>
+            </div>
+            <div class="thread-meta">
+              <span class="thread-author">by {{ thread.author.username }}</span>
+              <span class="thread-stats">{{ thread.replies }} replies • {{ thread.views }} views</span>
+              <span class="thread-time">{{ getTimeAgo(thread.lastActivity) }}</span>
+            </div>
+          </div>
+
+          <img [src]="thread.author.avatar" [alt]="thread.author.username" title="{{ thread.author || 'author avatar' }}" class="thread-avatar">
+        </div>
+      </div>
+    </div>
+
+    <!-- CHALLENGES TAB -->
+    <div *ngIf="activeTab === 'challenges'" class="challenges-content">
+      <div class="challenges-header">
+        <h3>Trading Challenges</h3>
+        <p class="challenges-subtitle">Compete with traders and win prizes!</p>
+      </div>
+
+      <div class="challenges-grid">
+        <div *ngFor="let challenge of challenges" class="challenge-card" [attr.data-status]="challenge.status">
+          <div class="challenge-status" [style.background-color]="getStatusColor(challenge.status)">
+            {{ challenge.status }}
+          </div>
+          
+          <div class="challenge-content">
+            <h4 class="challenge-title">{{ challenge.title }}</h4>
+            <p class="challenge-description">{{ challenge.description }}</p>
+            
+            <div class="challenge-prize">
+              <i class="fas fa-trophy"></i> {{ challenge.prize }}
+            </div>
+
+            <div class="challenge-info">
+              <div class="info-item">
+                <i class="fas fa-users"></i>
+                <span>{{ challenge.participants }} participants</span>
+              </div>
+              <div class="info-item" *ngIf="challenge.status === 'active'">
+                <i class="fas fa-clock"></i>
+                <span>{{ getDaysRemaining(challenge.endDate) }} days left</span>
+              </div>
+              <div class="info-item" *ngIf="challenge.status === 'upcoming'">
+                <i class="fas fa-calendar"></i>
+                <span>Starts {{ challenge.startDate | date:'shortDate' }}</span>
+              </div>
+            </div>
+
+            <button class="challenge-btn" [class.active]="challenge.status === 'active'">
+              {{ challenge.status === 'active' ? 'Join Challenge' : challenge.status === 'upcoming' ? 'Register' : 'View Results' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

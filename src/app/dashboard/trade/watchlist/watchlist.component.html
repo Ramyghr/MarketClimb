@@ -1,0 +1,15 @@
+<div class="watchlist-card">
+  <h4 class="watchlist-title">Watchlist</h4>
+  <div class="watchlist-items">
+    <div *ngFor="let item of marketData" 
+         class="watchlist-item" 
+         (click)="selectSymbol(item.symbol)">
+      <span class="watchlist-symbol">{{ item.symbol }}</span>
+      <span class="watchlist-price">${{ item.price | number:'1.2-2' }}</span>
+      <span class="watchlist-change" 
+            [ngClass]="{'positive': item.change >= 0, 'negative': item.change < 0}">
+        {{ item.change | number:'1.2-2' }}
+      </span>
+    </div>
+  </div>
+</div>

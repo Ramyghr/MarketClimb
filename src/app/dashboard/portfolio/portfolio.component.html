@@ -1,27 +1,98 @@
-<!-- portfolio.component.html -->
-<div class="portfolio">
-  <h2>My Portfolio</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Symbol</th>
-        <th>Name</th>
-        <th>Qty</th>
-        <th>Price</th>
-        <th>24h</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let asset of assets" (click)="selectAsset(asset)">
-        <td>{{ asset.symbol }}</td>
-        <td>{{ asset.name }}</td>
-        <td>{{ asset.quantity }}</td>
-        <td>{{ asset.price | number:'1.2-2' }}</td>
-        <td [ngClass]="{pos: asset.change24h>0, neg: asset.change24h<0}">{{ asset.change24h }}%</td>
-        <td>{{ (asset.price * asset.quantity) | number:'1.2-2' }}</td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Total Portfolio Value: {{ totalValue | number:'1.2-2' }} USD</h3>
+<div class="portfolio-container">
+  
+  <!-- Portfolio Summary Header -->
+  <div class="portfolio-header">
+    <div class="summary-card main-summary">
+      <div class="summary-label">Total Portfolio Value</div>
+      <div class="summary-value">${{ totalValue | number:'1.2-2' }}</div>
+      <div class="summary-change" [ngClass]="{'positive': totalChange >= 0, 'negative': totalChange < 0}">
+        <i [class]="totalChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+        ${{ totalChange | number:'1.2-2' }} ({{ totalChangePercent | number:'1.2-2' }}%)
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid Layout -->
+  <div class="portfolio-grid">
+
+    <!-- Performance Chart Panel -->
+    <div class="panel-card chart-panel">
+      <div class="card-header">
+        <h4 class="card-title">
+          <i class="fas fa-chart-line"></i> Portfolio Performance
+        </h4>
+        <span class="time-range">Last 7 Days</span>
+      </div>
+      <div class="chart-container">
+        <canvas #performanceChart></canvas>
+      </div>
+    </div>
+
+    <!-- Wallets Panel -->
+    <div class="panel-card wallets-panel">
+      <div class="card-header">
+        <h4 class="card-title">
+          <i class="fas fa-wallet"></i> Asset Holdings
+        </h4>
+      </div>
+      <div class="wallets-list">
+        <div *ngFor="let wallet of wallets" class="wallet-item">
+          <div class="wallet-info">
+            <div class="wallet-symbol-icon">
+              <span class="symbol-text">{{ wallet.symbol }}</span>
+            </div>
+            <div class="wallet-details">
+              <span class="wallet-name">{{ wallet.symbol }}</span>
+              <span class="wallet-balance">{{ wallet.balance | number:'1.4-4' }}</span>
+            </div>
+          </div>
+          <div class="wallet-value">
+            <div class="value-amount">${{ getWalletValue(wallet) | number:'1.2-2' }}</div>
+            <div class="value-percentage">{{ getWalletPercentage(wallet) | number:'1.1-1' }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Transaction History Panel -->
+  <div class="panel-card transactions-panel">
+    <div class="card-header">
+      <h4 class="card-title">
+        <i class="fas fa-history"></i> Recent Transactions
+      </h4>
+      <span class="transaction-count">{{ transactions.length }} transactions</span>
+    </div>
+    <div class="transaction-list">
+      <div class="transaction-row header">
+        <span>Time</span>
+        <span>Symbol</span>
+        <span>Type</span>
+        <span>Quantity</span>
+        <span>Price</span>
+        <span>Total</span>
+      </div>
+      <div *ngIf="transactions.length === 0" class="no-transactions">
+        <i class="fas fa-inbox"></i>
+        <p>No transactions yet</p>
+      </div>
+      <div *ngFor="let tx of transactions" class="transaction-row">
+        <span class="tx-time">{{ tx.date | date:'short' }}</span>
+        <span class="tx-symbol">
+          <span class="symbol-badge">{{ tx.symbol }}</span>
+        </span>
+        <span class="tx-side">
+          <span class="side-badge" [ngClass]="tx.side">
+            <i [class]="tx.side === 'buy' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+            {{ tx.side }}
+          </span>
+        </span>
+        <span class="tx-quantity">{{ tx.quantity | number:'1.4-4' }}</span>
+        <span class="tx-price">${{ tx.price | number:'1.2-2' }}</span>
+        <span class="tx-total">${{ tx.price * tx.quantity | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </div>
+
 </div>

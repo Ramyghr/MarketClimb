@@ -2,12 +2,13 @@
   class="navbar navbar-expand-lg fixed-top"
   [ngClass]="{'navbar-transparent': !isDashboard, 'navbar-dark bg-dark': isDashboard}"
 >
-  <div class="container">
-    <div class="navbar-translate">
-      <a class="navbar-brand" href="#home">
-        <i class="nc-icon nc-chart-bar-32"></i> Market Climb
-      </a>
-
+ <div class="container">
+  <div class="navbar-translate">
+    <a class="navbar-brand" href="#home">
+      <img src="assets/img/LOGO.png" alt="Market Climb Logo" class="navbar-logo">
+      Market Climb
+    </a>
+  
       <!-- Hamburger toggle for small screens -->
       <button *ngIf="!hideSidebarToggle" class="navbar-toggler" type="button" (click)="sidebarToggle()" aria-label="Toggle navigation" title="Toggle navigation">
         <span class="navbar-toggler-bar bar1" aria-hidden="true"></span>

@@ -26,7 +26,8 @@
   flex-direction: column;
   background: linear-gradient(135deg, #145a73ff, #0b1f26ff, #030404ff);
   min-height: 100vh;
-  margin-left: 0;           /* remove left margin, content flows under sidebar */
+  margin-left: 0;
+  margin-top: 1cm;           /* remove left margin, content flows under sidebar */
 }
 
 /* Header stays solid */

@@ -1,0 +1,131 @@
+<div class="achievements-section">
+  
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="stats-summary">
+    <div class="summary-card">
+      <div class="summary-icon">🏆</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ stats.unlocked }} / {{ stats.total }}</div>
+        <div class="summary-label">Unlocked</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">📈</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ stats.percentage }}%</div>
+        <div class="summary-label">Complete</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">⭐</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ stats.totalPoints }}</div>
+        <div class="summary-label">Points Earned</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Category:</label>
+      <select [(ngModel)]="selectedCategory" title="category" class="filter-select">
+        <option value="all">All Categories</option>
+        <option value="trading">Trading</option>
+        <option value="learning">Learning</option>
+        <option value="social">Social</option>
+        <option value="milestone">Milestone</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Rarity:</label>
+      <select [(ngModel)]="selectedRarity" title="rarity" class="filter-select">
+        <option value="all">All Rarities</option>
+        <option value="common">Common</option>
+        <option value="rare">Rare</option>
+        <option value="epic">Epic</option>
+        <option value="legendary">Legendary</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="showUnlockedOnly">
+        <span>Unlocked Only</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Achievements Grid -->
+  <div class="achievements-grid">
+    <div 
+      *ngFor="let achievement of filteredAchievements"
+      class="achievement-card"
+      [class.unlocked]="achievement.unlocked"
+      [class.locked]="!achievement.unlocked">
+      
+      <!-- Rarity Glow -->
+      <div class="rarity-glow" [style.background-color]="getRarityColor(achievement.rarity)"></div>
+
+      <!-- Achievement Icon -->
+      <div class="achievement-icon" [style.border-color]="getRarityColor(achievement.rarity)">
+        {{ achievement.icon }}
+      </div>
+
+      <!-- Achievement Info -->
+      <div class="achievement-info">
+        <h3 class="achievement-title">{{ achievement.title }}</h3>
+        <p class="achievement-description">{{ achievement.description }}</p>
+        
+        <div class="achievement-meta">
+          <span class="category-badge">
+            {{ getCategoryIcon(achievement.category) }} {{ achievement.category }}
+          </span>
+          <span class="rarity-badge" [style.background-color]="getRarityColor(achievement.rarity)">
+            {{ achievement.rarity }}
+          </span>
+        </div>
+
+        <!-- Progress Bar (if not unlocked) -->
+        <div *ngIf="!achievement.unlocked && achievement.maxProgress > 1" class="progress-container">
+          <div class="progress-bar">
+            <div 
+              class="progress-fill" 
+              [style.width.%]="(achievement.progress / achievement.maxProgress) * 100"
+              [style.background-color]="getRarityColor(achievement.rarity)">
+            </div>
+          </div>
+          <span class="progress-text">{{ achievement.progress }} / {{ achievement.maxProgress }}</span>
+        </div>
+
+        <!-- Points Display -->
+        <div class="points-display">
+          <span class="points-icon">⭐</span>
+          <span class="points-value">{{ achievement.points }} points</span>
+        </div>
+
+        <!-- Unlocked Badge -->
+        <div *ngIf="achievement.unlocked" class="unlocked-badge">
+          <span class="badge-icon">✓</span>
+          <span class="badge-text">Unlocked {{ achievement.unlockedAt | date:'shortDate' }}</span>
+        </div>
+
+        <!-- Locked Overlay -->
+        <div *ngIf="!achievement.unlocked" class="locked-overlay">
+          🔒 Locked
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredAchievements.length === 0" class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <p>No achievements match your filters</p>
+  </div>
+
+</div>

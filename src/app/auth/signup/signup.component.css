@@ -102,3 +102,10 @@
 .signup-sidebar .step:last-child::after {
   display: none;
 }
+/* In your dashboard or global styles */
+a.active {
+  color: #f5365c !important;
+  background-color: rgba(245, 54, 92, 0.1);
+  border-left: 3px solid #f5365c;
+  font-weight: 600;
+}

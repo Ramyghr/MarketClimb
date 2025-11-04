@@ -4,6 +4,14 @@
    padding: 1rem 2rem;      
   min-height: 90px;     
 }
+.navbar-logo {
+  height: 70px;       /* adjust as needed */
+  width: auto;        /* maintain aspect ratio */
+  margin-top: -5px;   /* align with navbar */
+  margin-right: 20px;  /* space between logo and text */
+}
+
+
 /* Default title color when navbar is transparent */
 .navbar-brand {
   color: white;

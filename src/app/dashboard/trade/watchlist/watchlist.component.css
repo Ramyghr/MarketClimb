@@ -1,0 +1,81 @@
+/* Matches your panel-card theme */
+.watchlist-card {
+  background-color: #010102;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  flex: 1; /* take available space in column */
+  max-width: 400px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.watchlist-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #00c896;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.watchlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  flex: 1; /* fill available height */
+}
+
+.watchlist-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.watchlist-items::-webkit-scrollbar-track {
+  background: #0b1f26;
+}
+
+.watchlist-items::-webkit-scrollbar-thumb {
+  background: #00c896;
+  border-radius: 3px;
+}
+
+.watchlist-items::-webkit-scrollbar-thumb:hover {
+  background: #00a076;
+}
+
+.watchlist-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.watchlist-item:hover {
+  background-color: rgba(0, 200, 150, 0.1);
+  transform: translateX(2px);
+}
+
+.watchlist-symbol {
+  color: #00c896;
+  font-weight: bold;
+}
+
+.watchlist-price {
+  font-weight: bold;
+  color: #f1f1f1;
+}
+
+.watchlist-change.positive {
+  color: #51cf66;
+}
+
+.watchlist-change.negative {
+  color: #ff6b6b;
+}

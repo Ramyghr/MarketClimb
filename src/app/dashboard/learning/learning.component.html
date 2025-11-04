@@ -1,0 +1,425 @@
+<div class="learning-container">
+  
+  <!-- Header -->
+  <div class="learning-header">
+    <h1 class="page-title">
+      <span class="title-icon"></span> Learning Center
+    </h1>
+    <p class="page-subtitle">Master trading with interactive courses and quizzes</p>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'courses'"
+      (click)="switchTab('courses')">
+      <span class="tab-icon">📚</span> Courses
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'quizzes'"
+      (click)="switchTab('quizzes')">
+      <span class="tab-icon">🎯</span> Quizzes
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'progress'"
+      (click)="switchTab('progress')">
+      <span class="tab-icon">📊</span> My Progress
+    </button>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span class="alert-icon">✅</span>
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span class="alert-icon">❌</span>
+    {{ errorMessage }}
+  </div>
+
+  <!-- COURSES TAB -->
+  <div *ngIf="activeTab === 'courses'" class="courses-section">
+    
+    <!-- Course Detail View -->
+    <div *ngIf="selectedCourse" class="course-detail">
+      <button class="btn-back" (click)="backToCourses()">
+        ⬅️ Back to Courses
+      </button>
+
+      <div class="course-detail-header">
+        <div class="course-icon-large">{{ selectedCourse.icon }}</div>
+        <div class="course-detail-info">
+          <h2>{{ selectedCourse.title }}</h2>
+          <p>{{ selectedCourse.description }}</p>
+          <div class="course-meta">
+            <span class="meta-item">⏱️ {{ selectedCourse.duration }} min</span>
+            <span class="meta-item">📖 {{ selectedCourse.lessons }} lessons</span>
+            <span class="meta-item">⭐ {{ selectedCourse.rating }}/5</span>
+            <span class="meta-item">👥 {{ selectedCourse.students }} students</span>
+          </div>
+          <div class="course-actions">
+            <button 
+              *ngIf="!selectedCourse.enrolled" 
+              class="btn btn-primary"
+              (click)="enrollCourse(selectedCourse.id)">
+              ✅ Enroll Now
+            </button>
+            <button 
+              *ngIf="selectedCourse.enrolled" 
+              class="btn btn-outline"
+              (click)="unenrollCourse(selectedCourse.id)">
+              🚫 Unenroll
+            </button>
+          </div>
+        </div>
+        <div class="progress-circle">
+          <svg width="120" height="120">
+            <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+            <circle 
+              cx="60" 
+              cy="60" 
+              r="54" 
+              fill="none" 
+              [attr.stroke]="selectedCourse.color"
+              stroke-width="8"
+              stroke-linecap="round"
+              [attr.stroke-dasharray]="339.292"
+              [attr.stroke-dashoffset]="339.292 - (339.292 * selectedCourse.progress / 100)"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="progress-text">{{ selectedCourse.progress }}%</div>
+        </div>
+      </div>
+
+      <!-- Lessons List -->
+      <div class="lessons-container">
+        <h3 class="section-title">📖 Course Lessons</h3>
+        
+        <div *ngIf="isLoadingLessons" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading lessons...</p>
+        </div>
+
+        <div *ngIf="!isLoadingLessons" class="lessons-list">
+          <div *ngFor="let lesson of courseLessons" class="lesson-card">
+            <div class="lesson-number">{{ lesson.order }}</div>
+            <div class="lesson-info">
+              <h4 class="lesson-title">{{ lesson.title }}</h4>
+              <p class="lesson-description">{{ lesson.description }}</p>
+              <span class="lesson-duration">⏱️ {{ lesson.duration }} min</span>
+            </div>
+            <div class="lesson-status">
+              <span *ngIf="lesson.completed" class="status-badge completed">✓ Completed</span>
+              <button 
+                *ngIf="!lesson.completed"
+                class="btn-complete"
+                (click)="completeLesson(lesson.id)">
+                Start Lesson
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course List View -->
+    <div *ngIf="!selectedCourse">
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label>Category:</label>
+          <select [(ngModel)]="selectedCategory" title="category" class="filter-select">
+            <option value="all">All Categories</option>
+            <option value="basics">Basics</option>
+            <option value="technical">Technical Analysis</option>
+            <option value="fundamental">Fundamental Analysis</option>
+            <option value="risk">Risk Management</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Difficulty:</label>
+          <select [(ngModel)]="selectedDifficulty" title="difficulty" class="filter-select">
+            <option value="all">All Levels</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="showEnrolledOnly">
+            <span>Show Enrolled Only</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Courses Grid -->
+      <div class="courses-grid">
+        <div *ngFor="let course of filteredCourses" class="course-card" (click)="viewCourseDetails(course)">
+          <div class="course-badge" [style.background-color]="course.color">
+            {{ course.icon }}
+          </div>
+          <div *ngIf="course.enrolled" class="enrolled-badge">✓ Enrolled</div>
+          
+          <h3 class="course-title">{{ course.title }}</h3>
+          <p class="course-description">{{ course.description }}</p>
+          
+          <div class="course-stats">
+            <span class="stat-item">⏱️ {{ course.duration }}min</span>
+            <span class="stat-item">📖 {{ course.lessons }} lessons</span>
+          </div>
+
+          <div class="course-footer">
+            <span class="difficulty-badge" [style.background-color]="getDifficultyColor(course.difficulty)">
+              {{ course.difficulty }}
+            </span>
+            <span class="rating">⭐ {{ course.rating }}</span>
+          </div>
+
+          <div *ngIf="course.enrolled" class="course-progress-bar">
+            <div class="progress-fill" [style.width.%]="course.progress" [style.background-color]="course.color"></div>
+            <span class="progress-label">{{ course.progress }}% Complete</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZZES TAB -->
+  <div *ngIf="activeTab === 'quizzes'" class="quizzes-section">
+    
+    <!-- Active Quiz View -->
+    <div *ngIf="activeQuiz && !quizCompleted" class="quiz-active">
+      <div class="quiz-header">
+        <h2>{{ activeQuiz.title }}</h2>
+        <div class="quiz-info">
+          <span class="quiz-meta">Question {{ currentQuestionIndex + 1 }} of {{ activeQuiz.questions.length }}</span>
+          <span *ngIf="activeQuiz.timeLimit" class="quiz-timer" [class.warning]="timeRemaining < 60">
+            ⏱️ {{ getTimeFormatted() }}
+          </span>
+        </div>
+        <button class="btn-exit" (click)="exitQuiz()">✕ Exit</button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="quiz-progress">
+        <div 
+          class="quiz-progress-fill" 
+          [style.width.%]="((currentQuestionIndex + 1) / activeQuiz.questions.length) * 100">
+        </div>
+      </div>
+
+      <!-- Question -->
+      <div class="question-container">
+        <h3 class="question-text">{{ activeQuiz.questions[currentQuestionIndex].question }}</h3>
+        
+        <div class="options-list">
+          <button 
+            *ngFor="let option of activeQuiz.questions[currentQuestionIndex].options; let i = index"
+            class="option-btn"
+            [class.selected]="userAnswers[currentQuestionIndex] === i"
+            (click)="selectAnswer(i)">
+            <span class="option-letter">{{ String.fromCharCode(65 + i) }}</span>
+            <span class="option-text">{{ option }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="quiz-navigation">
+        <button 
+          class="btn btn-secondary"
+          (click)="previousQuestion()"
+          [disabled]="currentQuestionIndex === 0">
+          ⬅️ Previous
+        </button>
+        
+        <div class="question-dots">
+          <span 
+            *ngFor="let q of activeQuiz.questions; let i = index"
+            class="question-dot"
+            [class.current]="i === currentQuestionIndex"
+            [class.answered]="userAnswers[i] !== -1">
+          </span>
+        </div>
+
+        <button 
+          *ngIf="currentQuestionIndex < activeQuiz.questions.length - 1"
+          class="btn btn-primary"
+          (click)="nextQuestion()">
+          Next ➡️
+        </button>
+        
+        <button 
+          *ngIf="currentQuestionIndex === activeQuiz.questions.length - 1"
+          class="btn btn-success"
+          (click)="submitQuiz()">
+          🎯 Submit Quiz
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz Results View -->
+    <div *ngIf="quizCompleted && quizResult" class="quiz-results">
+      <div class="results-card" [class.passed]="quizResult.passed" [class.failed]="!quizResult.passed">
+        <div class="results-icon">{{ quizResult.passed ? '🎉' : '😔' }}</div>
+        <h2>{{ quizResult.passed ? 'Congratulations!' : 'Keep Trying!' }}</h2>
+        <p class="results-message">
+          {{ quizResult.passed ? 'You passed the quiz!' : 'You need ' + activeQuiz!.passingScore + '% to pass' }}
+        </p>
+
+        <div class="score-circle">
+          <div class="score-value">{{ quizResult.score }}%</div>
+          <div class="score-label">Your Score</div>
+        </div>
+
+        <div *ngIf="quizResult.passed" class="reward-display">
+          <span class="reward-icon">💰</span>
+          <span class="reward-text">+{{ quizResult.reward }} Points</span>
+        </div>
+
+        <!-- Answers Review -->
+        <div class="answers-review">
+          <h3>Review Answers</h3>
+          <div *ngFor="let question of activeQuiz!.questions; let i = index" class="review-item">
+            <div class="review-header">
+              <span class="question-num">Question {{ i + 1 }}</span>
+              <span 
+                class="answer-status"
+                [class.correct]="userAnswers[i] === question.correctAnswer"
+                [class.incorrect]="userAnswers[i] !== question.correctAnswer">
+                {{ userAnswers[i] === question.correctAnswer ? '✓ Correct' : '✗ Incorrect' }}
+              </span>
+            </div>
+            <p class="review-question">{{ question.question }}</p>
+            <p class="review-answer">
+              <strong>Your answer:</strong> 
+              {{ userAnswers[i] !== -1 ? question.options[userAnswers[i]] : 'Not answered' }}
+            </p>
+            <p *ngIf="userAnswers[i] !== question.correctAnswer" class="review-correct">
+              <strong>Correct answer:</strong> {{ question.options[question.correctAnswer] }}
+            </p>
+            <p class="review-explanation">💡 {{ question.explanation }}</p>
+          </div>
+        </div>
+
+        <div class="results-actions">
+          <button class="btn btn-secondary" (click)="activeQuiz = null">Back to Quizzes</button>
+          <button class="btn btn-primary" (click)="retakeQuiz()">🔄 Retake Quiz</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz List View -->
+    <div *ngIf="!activeQuiz" class="quizzes-list">
+      <div *ngFor="let quiz of quizzes" class="quiz-card">
+        <div class="quiz-card-header">
+          <div class="quiz-icon">🎯</div>
+          <div class="quiz-info-main">
+            <h3>{{ quiz.title }}</h3>
+            <p>{{ quiz.description }}</p>
+            <div class="quiz-meta-info">
+              <span class="meta-badge">{{ quiz.category }}</span>
+              <span class="meta-badge" [style.background-color]="getDifficultyColor(quiz.difficulty)">
+                {{ quiz.difficulty }}
+              </span>
+              <span class="meta-badge">{{ quiz.questions.length }} questions</span>
+              <span *ngIf="quiz.timeLimit" class="meta-badge">⏱️ {{ quiz.timeLimit }} min</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="quiz-card-footer">
+          <div class="quiz-reward">
+            <span class="reward-icon">💰</span>
+            <span>{{ quiz.reward }} points</span>
+          </div>
+          <button 
+            class="btn btn-primary"
+            (click)="startQuiz(quiz)">
+            {{ quiz.completed ? '🔄 Retake' : '▶️ Start Quiz' }}
+          </button>
+        </div>
+
+        <div *ngIf="quiz.completed && quiz.score !== undefined" class="quiz-completed-badge">
+          ✓ Completed - {{ quiz.score }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS TAB -->
+  <div *ngIf="activeTab === 'progress'" class="progress-section">
+    <div class="progress-grid">
+      
+      <!-- Stats Cards -->
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-info">
+          <div class="stat-value">{{ userProgress.totalPoints }}</div>
+          <div class="stat-label">Total Points</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🎓</div>
+        <div class="stat-info">
+          <div class="stat-value">{{ userProgress.coursesCompleted }}</div>
+          <div class="stat-label">Courses Completed</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-info">
+          <div class="stat-value">{{ userProgress.quizzesPassed }}</div>
+          <div class="stat-label">Quizzes Passed</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+          <div class="stat-value">{{ userProgress.currentStreak }}</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Progress -->
+    <div class="level-card">
+      <h3>Level {{ userProgress.level }}</h3>
+      <p>You're {{ Math.round(progressToNextLevel) }}% of the way to Level {{ nextLevel }}</p>
+      <div class="level-progress-bar">
+        <div class="level-progress-fill" [style.width.%]="progressToNextLevel"></div>
+      </div>
+      <p class="next-level-text">Next Level: {{ nextLevel }}</p>
+    </div>
+
+    <!-- Achievements -->
+    <div class="achievements-section">
+      <h3 class="section-title">🏆 Achievements</h3>
+      <div class="achievements-grid">
+        <div 
+          *ngFor="let achievement of userProgress.achievements"
+          class="achievement-card"
+          [class.unlocked]="achievement.unlocked">
+          <div class="achievement-icon">{{ achievement.icon }}</div>
+          <h4>{{ achievement.title }}</h4>
+          <p>{{ achievement.description }}</p>
+          <div *ngIf="achievement.unlocked" class="unlocked-badge">
+            ✓ Unlocked {{ achievement.unlockedAt | date:'shortDate' }}
+          </div>
+          <div *ngIf="!achievement.unlocked" class="locked-badge">
+            🔒 Locked
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

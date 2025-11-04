@@ -1,23 +1,62 @@
 <div class="order-book-card">
-  <h4 class="book-title">{{ symbol }} Order Book</h4>
+  <h4 class="book-title">Order Book</h4>
+  
+  <!-- Spread Info -->
+  <div class="spread-info">
+    <span class="spread-label">Spread:</span>
+    <span class="spread-value">{{ spreadAmount | number:'1.2-2' }}</span>
+    <span class="spread-percent">({{ spreadPercent | number:'1.2-2' }}%)</span>
+  </div>
 
   <div class="order-book-container">
-    <!-- Sell Orders -->
+    <!-- Sell Orders (reversed - highest at bottom) -->
     <div class="orders sell-orders">
-      <h5 class="order-label">Sell</h5>
-      <div *ngFor="let order of sellOrders" class="order-row">
-        <span class="price">{{ order.price }}</span>
-        <span class="quantity">{{ order.quantity }}</span>
+      <div class="order-header">
+        <span>Price</span>
+        <span>Quantity</span>
+        <span>Total</span>
       </div>
+      <div *ngFor="let order of sellOrders.slice().reverse()" 
+           class="order-row sell-row"
+           (click)="onOrderClick(order, 'sell')">
+        <span class="price">{{ order.price | number:'1.2-2' }}</span>
+        <span class="quantity">{{ order.quantity | number:'1.2-2' }}</span>
+        <span class="total">{{ order.price * order.quantity | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <!-- Spread Indicator -->
+    <div class="spread-indicator">
+      <div class="spread-line"></div>
+      <span class="spread-text">{{ spreadAmount | number:'1.2-2' }}</span>
     </div>
 
     <!-- Buy Orders -->
     <div class="orders buy-orders">
-      <h5 class="order-label">Buy</h5>
-      <div *ngFor="let order of buyOrders" class="order-row">
-        <span class="price">{{ order.price }}</span>
-        <span class="quantity">{{ order.quantity }}</span>
+      <div class="order-header">
+        <span>Price</span>
+        <span>Quantity</span>
+        <span>Total</span>
       </div>
+      <div *ngFor="let order of buyOrders" 
+           class="order-row buy-row"
+           (click)="onOrderClick(order, 'buy')">
+        <span class="price">{{ order.price | number:'1.2-2' }}</span>
+        <span class="quantity">{{ order.quantity | number:'1.2-2' }}</span>
+        <span class="total">{{ order.price * order.quantity | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="order-book-summary">
+    <div class="summary-item">
+      <span class="summary-label">Total Buy:</span>
+      <span class="summary-value buy">{{ getTotalQuantity(buyOrders) | number:'1.2-2' }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Total Sell:</span>
+      <span class="summary-value sell">{{ getTotalQuantity(sellOrders) | number:'1.2-2' }}</span>
     </div>
   </div>
 </div>

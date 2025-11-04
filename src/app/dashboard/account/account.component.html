@@ -1,1 +1,589 @@
-<p>account works!</p>
+<div class="account-container">
+  
+  <!-- Header -->
+  <div class="account-header">
+    <h1 class="page-title">
+      <span class="title-icon"></span> Account Settings
+    </h1>
+    <p class="page-subtitle">Manage your account preferences and security</p>
+  </div>
+
+  <!-- Layout Grid -->
+  <div class="account-layout">
+    
+    <!-- Sidebar Navigation -->
+    <div class="settings-sidebar">
+      <nav class="sidebar-nav">
+        <button 
+          class="nav-item" 
+          [class.active]="activeSection === 'profile'"
+          (click)="switchSection('profile')">
+          <span class="nav-icon">👤</span>
+          <span class="nav-label">Profile</span>
+        </button>
+        <button 
+          class="nav-item" 
+          [class.active]="activeSection === 'security'"
+          (click)="switchSection('security')">
+          <span class="nav-icon">🔒</span>
+          <span class="nav-label">Security</span>
+        </button>
+        <button 
+          class="nav-item" 
+          [class.active]="activeSection === 'notifications'"
+          (click)="switchSection('notifications')">
+          <span class="nav-icon">🔔</span>
+          <span class="nav-label">Notifications</span>
+        </button>
+        <button 
+          class="nav-item" 
+          [class.active]="activeSection === 'trading'"
+          (click)="switchSection('trading')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Trading</span>
+        </button>
+        <button 
+          class="nav-item" 
+          [class.active]="activeSection === 'connections'"
+          (click)="switchSection('connections')">
+          <span class="nav-icon">🔗</span>
+          <span class="nav-label">Connections</span>
+        </button>
+        <button 
+          class="nav-item" 
+          [class.active]="activeSection === 'subscription'"
+          (click)="switchSection('subscription')">
+          <span class="nav-icon">💎</span>
+          <span class="nav-label">Subscription</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="settings-content">
+      
+      <!-- Success/Error Messages -->
+      <div *ngIf="successMessage" class="alert alert-success">
+        <span class="alert-icon">✅</span>
+        {{ successMessage }}
+      </div>
+      <div *ngIf="errorMessage" class="alert alert-error">
+        <span class="alert-icon">❌</span>
+        {{ errorMessage }}
+      </div>
+
+      <!-- PROFILE SECTION -->
+      <div *ngIf="activeSection === 'profile'" class="settings-section">
+        <div class="section-header">
+          <h2 class="section-title">Profile Information</h2>
+          <button *ngIf="!isEditingProfile" class="btn-edit" (click)="editProfile()">
+            ✏️ Edit Profile
+          </button>
+        </div>
+
+        <div class="profile-card">
+          <!-- Avatar Section -->
+          <div class="avatar-section">
+            <div class="avatar-wrapper">
+              <img [src]="userProfile.avatar" [alt]="userProfile.username" title="{{ userProfile.username || 'User avatar' }}" class="user-avatar-large">
+              <div *ngIf="userProfile.verified" class="verified-badge">✓</div>
+            </div>
+            <div *ngIf="isEditingProfile" class="avatar-upload">
+              <label for="avatar-input" class="btn-upload">
+                📷 Change Avatar
+                <input 
+                  id="avatar-input" 
+                  type="file" 
+                  accept="image/*" 
+                  (change)="onAvatarChange($event)"
+                  style="display: none">
+              </label>
+            </div>
+          </div>
+
+          <!-- Profile Info -->
+          <div class="profile-info">
+            <div *ngIf="!isEditingProfile" class="profile-display">
+              <div class="info-group">
+                <label class="info-label">Username</label>
+                <div class="info-value">{{ userProfile.username }}</div>
+              </div>
+              <div class="info-group">
+                <label class="info-label">Email</label>
+                <div class="info-value">{{ userProfile.email }}</div>
+              </div>
+              <div class="info-group">
+                <label class="info-label">Name</label>
+                <div class="info-value">{{ userProfile.firstName }} {{ userProfile.lastName }}</div>
+              </div>
+              <div class="info-group">
+                <label class="info-label">Bio</label>
+                <div class="info-value">{{ userProfile.bio }}</div>
+              </div>
+              <div class="info-group">
+                <label class="info-label">Location</label>
+                <div class="info-value">📍 {{ userProfile.location }}</div>
+              </div>
+              <div class="info-group">
+                <label class="info-label">Website</label>
+                <div class="info-value">🔗 <a [href]="userProfile.website" target="_blank">{{ userProfile.website }}</a></div>
+              </div>
+              <div class="info-group">
+                <label class="info-label">Member Since</label>
+                <div class="info-value">{{ userProfile.joinDate | date:'longDate' }} ({{ getMemberSince() }})</div>
+              </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div *ngIf="isEditingProfile" class="profile-edit-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>First Name</label>
+                  <input type="text" [(ngModel)]="profileForm.firstName" title="firstName" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label>Last Name</label>
+                  <input type="text" [(ngModel)]="profileForm.lastName" title="lastName" class="form-input">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" [(ngModel)]="profileForm.username" title="username" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" [(ngModel)]="profileForm.email" title="email" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Bio</label>
+                <textarea [(ngModel)]="profileForm.bio" class="form-textarea" title="bio" rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Location</label>
+                <input type="text" [(ngModel)]="profileForm.location" title="location" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Website</label>
+                <input type="url" [(ngModel)]="profileForm.website" title="website" class="form-input">
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-secondary" (click)="cancelEditProfile()">Cancel</button>
+                <button class="btn btn-primary" (click)="saveProfile()" [disabled]="isSaving">
+                  {{ isSaving ? '⏳ Saving...' : '💾 Save Changes' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECURITY SECTION -->
+      <div *ngIf="activeSection === 'security'" class="settings-section">
+        <div class="section-header">
+          <h2 class="section-title">Security Settings</h2>
+        </div>
+
+        <!-- Password Change -->
+        <div class="security-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">🔑 Password</h3>
+              <p class="card-subtitle">Last changed: {{ securitySettings.lastPasswordChange | date:'mediumDate' }}</p>
+            </div>
+            <button *ngIf="!isChangingPassword" class="btn-action" (click)="togglePasswordChange()">
+              Change Password
+            </button>
+          </div>
+
+          <div *ngIf="isChangingPassword" class="password-form">
+            <div class="form-group">
+              <label>Current Password</label>
+              <input type="password" [(ngModel)]="passwordForm.oldPassword" title="password" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" [(ngModel)]="passwordForm.newPassword" title="password" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input type="password" [(ngModel)]="passwordForm.confirmPassword" title="password" class="form-input">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" (click)="togglePasswordChange()">Cancel</button>
+              <button class="btn btn-primary" (click)="changePassword()" [disabled]="isSaving">
+                {{ isSaving ? 'Changing...' : 'Update Password' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two-Factor Authentication -->
+        <div class="security-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">🔐 Two-Factor Authentication</h3>
+              <p class="card-subtitle">Add an extra layer of security to your account</p>
+            </div>
+            <label class="toggle-switch">
+              <input 
+                type="checkbox" 
+                [checked]="securitySettings.twoFactorEnabled"
+                (change)="toggle2FA()"
+                title="check">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Verification Status -->
+        <div class="security-card">
+          <h3 class="card-title">✅ Verification Status</h3>
+          <div class="verification-list">
+            <div class="verification-item">
+              <span class="verification-label">📧 Email</span>
+              <span class="verification-status" [class.verified]="securitySettings.emailVerified">
+                {{ securitySettings.emailVerified ? '✓ Verified' : '❌ Not Verified' }}
+              </span>
+            </div>
+            <div class="verification-item">
+              <span class="verification-label">📱 Phone</span>
+              <span class="verification-status" [class.verified]="securitySettings.phoneVerified">
+                {{ securitySettings.phoneVerified ? '✓ Verified' : '❌ Not Verified' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Sessions -->
+        <div class="security-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">💻 Active Sessions</h3>
+              <p class="card-subtitle">{{ securitySettings.activeSessions }} active session(s)</p>
+            </div>
+            <button class="btn-action danger">Log Out All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS SECTION -->
+      <div *ngIf="activeSection === 'notifications'" class="settings-section">
+        <div class="section-header">
+          <h2 class="section-title">Notification Preferences</h2>
+        </div>
+
+        <div class="notifications-grid">
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">📧</span>
+              <div>
+                <h4>Email Notifications</h4>
+                <p>Receive updates via email</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="notificationSettings.emailNotifications"
+                (change)="updateNotificationSetting('emailNotifications')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">📱</span>
+              <div>
+                <h4>Push Notifications</h4>
+                <p>Get instant alerts on your device</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+                type="checkbox" 
+                [checked]="notificationSettings.pushNotifications"
+                (change)="updateNotificationSetting('pushNotifications')"
+                title="check">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">📊</span>
+              <div>
+                <h4>Trade Alerts</h4>
+                <p>Notifications for your trades</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="notificationSettings.tradeAlerts"
+                (change)="updateNotificationSetting('tradeAlerts')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">💰</span>
+              <div>
+                <h4>Price Alerts</h4>
+                <p>Get notified about price changes</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="che"
+                type="checkbox" 
+                [checked]="notificationSettings.priceAlerts"
+                (change)="updateNotificationSetting('priceAlerts')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">📰</span>
+              <div>
+                <h4>News Alerts</h4>
+                <p>Market news and updates</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="notificationSettings.newsAlerts"
+                (change)="updateNotificationSetting('newsAlerts')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">👥</span>
+              <div>
+                <h4>Social Updates</h4>
+                <p>Activity from people you follow</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="notificationSettings.socialUpdates"
+                (change)="updateNotificationSetting('socialUpdates')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="notification-card">
+            <div class="notification-header">
+              <span class="notification-icon">📈</span>
+              <div>
+                <h4>Weekly Report</h4>
+                <p>Performance summary every week</p>
+              </div>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="notificationSettings.weeklyReport"
+                (change)="updateNotificationSetting('weeklyReport')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRADING PREFERENCES SECTION -->
+      <div *ngIf="activeSection === 'trading'" class="settings-section">
+        <div class="section-header">
+          <h2 class="section-title">Trading Preferences</h2>
+        </div>
+
+        <div class="trading-settings">
+          <!-- Default Order Type -->
+          <div class="setting-card">
+            <label class="setting-label">Default Order Type</label>
+            <select 
+            title="check"
+              [(ngModel)]="tradingPreferences.defaultOrderType"
+              (change)="updateTradingPreference('defaultOrderType', tradingPreferences.defaultOrderType)"
+              class="form-select">
+              <option value="market">Market Order</option>
+              <option value="limit">Limit Order</option>
+              <option value="stop">Stop-Limit Order</option>
+            </select>
+          </div>
+
+          <!-- Confirm Orders -->
+          <div class="setting-card checkbox-card">
+            <div>
+              <h4>Confirm Orders</h4>
+              <p>Show confirmation before placing orders</p>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="tradingPreferences.confirmOrders"
+                (change)="updateTradingPreference('confirmOrders', !tradingPreferences.confirmOrders)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Auto Stop Loss -->
+          <div class="setting-card checkbox-card">
+            <div>
+              <h4>Auto Stop-Loss</h4>
+              <p>Automatically set stop-loss for new orders</p>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="tradingPreferences.autoStopLoss"
+                (change)="updateTradingPreference('autoStopLoss', !tradingPreferences.autoStopLoss)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Stop Loss Percentage -->
+          <div *ngIf="tradingPreferences.autoStopLoss" class="setting-card">
+            <label class="setting-label">Stop-Loss Percentage</label>
+            <div class="range-input">
+              <input 
+              title="chedk"
+                type="range" 
+                min="1" 
+                max="20" 
+                [(ngModel)]="tradingPreferences.stopLossPercent"
+                (change)="updateTradingPreference('stopLossPercent', tradingPreferences.stopLossPercent)"
+                class="slider">
+              <span class="range-value">{{ tradingPreferences.stopLossPercent }}%</span>
+            </div>
+          </div>
+
+          <!-- Auto Take Profit -->
+          <div class="setting-card checkbox-card">
+            <div>
+              <h4>Auto Take-Profit</h4>
+              <p>Automatically set take-profit for new orders</p>
+            </div>
+            <label class="toggle-switch">
+              <input 
+              title="check"
+                type="checkbox" 
+                [checked]="tradingPreferences.autoTakeProfit"
+                (change)="updateTradingPreference('autoTakeProfit', !tradingPreferences.autoTakeProfit)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Take Profit Percentage -->
+          <div *ngIf="tradingPreferences.autoTakeProfit" class="setting-card">
+            <label class="setting-label">Take-Profit Percentage</label>
+            <div class="range-input">
+              <input 
+              title="check"
+                type="range" 
+                min="5" 
+                max="50" 
+                [(ngModel)]="tradingPreferences.takeProfitPercent"
+                (change)="updateTradingPreference('takeProfitPercent', tradingPreferences.takeProfitPercent)"
+                class="slider">
+              <span class="range-value">{{ tradingPreferences.takeProfitPercent }}%</span>
+            </div>
+          </div>
+
+          <!-- Risk Level -->
+          <div class="setting-card">
+            <label class="setting-label">Risk Level</label>
+            <div class="risk-buttons">
+              <button 
+                *ngFor="let level of ['conservative', 'moderate', 'aggressive']"
+                class="risk-btn"
+                [class.active]="tradingPreferences.riskLevel === level"
+                (click)="updateTradingPreference('riskLevel', level)">
+                {{ level | titlecase }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONNECTIONS SECTION -->
+      <div *ngIf="activeSection === 'connections'" class="settings-section">
+        <div class="section-header">
+          <h2 class="section-title">Connected Accounts</h2>
+        </div>
+
+        <div class="connections-grid">
+          <div *ngFor="let account of connectedAccounts" class="connection-card">
+            <div class="connection-icon">{{ account.icon }}</div>
+            <div class="connection-info">
+              <h4>{{ account.platform }}</h4>
+              <p>{{ account.username }}</p>
+            </div>
+            <button 
+              class="btn-connection"
+              [class.connected]="account.connected"
+              (click)="toggleConnection(account)">
+              {{ account.connected ? '✓ Connected' : '+ Connect' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBSCRIPTION SECTION -->
+      <div *ngIf="activeSection === 'subscription'" class="settings-section">
+        <div class="section-header">
+          <h2 class="section-title">Subscription & Billing</h2>
+        </div>
+
+        <div class="subscription-card premium">
+          <div class="premium-badge">💎 PREMIUM</div>
+          <h3>Premium Member</h3>
+          <p class="subscription-desc">You're currently on the Premium plan with full access to all features</p>
+          <div class="subscription-features">
+            <div class="feature">✓ Unlimited Trades</div>
+            <div class="feature">✓ Advanced Analytics</div>
+            <div class="feature">✓ Priority Support</div>
+            <div class="feature">✓ No Ads</div>
+          </div>
+          <div class="subscription-actions">
+            <button class="btn btn-secondary">Manage Subscription</button>
+            <button class="btn btn-outline">Billing History</button>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+          <h3>🚨 Danger Zone</h3>
+          <div class="danger-actions">
+            <div>
+              <h4>Export Account Data</h4>
+              <p>Download all your account data in JSON format</p>
+            </div>
+            <button class="btn btn-outline" (click)="exportData()">📥 Export Data</button>
+          </div>
+          <div class="danger-actions">
+            <div>
+              <h4>Delete Account</h4>
+              <p>Permanently delete your account and all associated data</p>
+            </div>
+            <button class="btn btn-danger" (click)="deleteAccount()">🗑️ Delete Account</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

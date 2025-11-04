@@ -1,42 +1,73 @@
-import { Component, Input, OnInit } from '@angular/core';
-
-interface Order {
-  price: number;
-  quantity: number;
-}
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { TradingService, Order } from '../../../core/services/trading.service';
+import { Subject, interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-order-book',
   templateUrl: './order-book.component.html',
   styleUrls: ['./order-book.component.css']
 })
-export class OrderBookComponent implements OnInit {
+export class OrderBookComponent implements OnInit, OnDestroy {
   @Input() symbol: string = 'NASDAQ:TSLA';
 
   buyOrders: Order[] = [];
   sellOrders: Order[] = [];
+  spreadAmount: number = 0;
+  spreadPercent: number = 0;
+
+  private destroy$ = new Subject<void>();
+
+  constructor(private tradingService: TradingService) {}
 
   ngOnInit(): void {
-    this.loadSampleOrders();
+    this.loadOrderBook();
+    
+    // Update order book every 3 seconds
+    interval(3000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.loadOrderBook();
+      });
+
+    // Listen for symbol changes
+    this.tradingService.selectedSymbol$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(symbol => {
+        this.symbol = symbol;
+        this.loadOrderBook();
+      });
   }
 
-  loadSampleOrders() {
-    // Sample buy orders
-    this.buyOrders = [
-      { price: 101.25, quantity: 5 },
-      { price: 101.00, quantity: 3.5 },
-      { price: 100.75, quantity: 10 },
-      { price: 100.50, quantity: 2.2 },
-      { price: 100.25, quantity: 7 }
-    ];
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
-    // Sample sell orders
-    this.sellOrders = [
-      { price: 102.00, quantity: 4 },
-      { price: 102.25, quantity: 6 },
-      { price: 102.50, quantity: 3 },
-      { price: 102.75, quantity: 1.5 },
-      { price: 103.00, quantity: 8 }
-    ];
+  loadOrderBook(): void {
+    this.tradingService.marketData$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        const orderBook = this.tradingService.generateOrderBook(data.price);
+        this.buyOrders = orderBook.buyOrders;
+        this.sellOrders = orderBook.sellOrders;
+        
+        // Calculate spread
+        if (this.sellOrders.length > 0 && this.buyOrders.length > 0) {
+          const bestAsk = this.sellOrders[0].price;
+          const bestBid = this.buyOrders[0].price;
+          this.spreadAmount = bestAsk - bestBid;
+          this.spreadPercent = (this.spreadAmount / bestBid) * 100;
+        }
+      });
+  }
+
+  onOrderClick(order: Order, side: 'buy' | 'sell'): void {
+    console.log(`Clicked ${side} order:`, order);
+    // TODO: Emit event to fill order form with this price
+  }
+
+  getTotalQuantity(orders: Order[]): number {
+    return orders.reduce((sum, order) => sum + order.quantity, 0);
   }
 }

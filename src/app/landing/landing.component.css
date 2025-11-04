@@ -212,3 +212,9 @@
     transform: translateX(-100%);
   }
 }
+.hero-logo {
+  display: block;      /* centers the image by default */
+  margin: 1px auto;   /* space above/below and center horizontally */
+  height: 160px;        /* adjust size as needed */
+  width: auto;         /* maintain aspect ratio */
+}

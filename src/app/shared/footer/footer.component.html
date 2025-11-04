@@ -1,30 +1,49 @@
-<footer class="footer bg-dark text-white">
-  <div class="container">
-    <div class="row align-items-center">
-      <nav class="footer-nav col-md-6">
-        <ul>
-            <li>
-                <a href="/dashboard">
-                Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/profile">
-                Profile
-                </a>
-            </li>
-            <li>
-                <a href="/settings">
-                Settings
-                </a>
-            </li>
-        </ul>    
-      </nav>
-      <div class="credits ml-auto col-md-6 text-md-right text-center">
-        <span>
-          © {{ currentYear }}, made with <i class="fa fa-heart heart text-danger"></i> 
-        </span>
+<footer class="footer">
+  <div class="footer-container">
+
+    <!-- Logo + Brand -->
+    <div class="footer-brand">
+      <img src="assets/img/LOGO.png" alt="Market Climb Logo" class="footer-logo">
+      <h2 class="brand-name">Market Climb</h2>
+      <p class="footer-tagline">Empowering the next generation of traders</p>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="footer-links">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a routerLink="/home">Home</a></li>
+        <li><a routerLink="/features">Features</a></li>
+        <li><a routerLink="/learning">Learning</a></li>
+        <li><a routerLink="/community">Community</a></li>
+        <li><a routerLink="/account">Account</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="footer-contact">
+      <h3>Contact</h3>
+      <ul>
+        <li><i class="fas fa-envelope"></i> sami.boumaiza@esprit.tn</li>
+        <li><i class="fas fa-phone"></i> +216 46 637 353</li>
+        <li><i class="fab fa-linkedin"></i> <a href="https://www.linkedin.com/in/sami-boumaiza" title="linkedin" target="_blank">LinkedIn</a></li>
+      </ul>
+    </div>
+
+    <!-- Social Links -->
+    <div class="footer-social">
+      <h3>Follow Us</h3>
+      <div class="social-icons">
+        <a href="#"><i class="fab fa-facebook-f"></i></a>
+        <a href="#"><i class="fab fa-x-twitter"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-youtube"></i></a>
       </div>
     </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="footer-bottom">
+    <p>© 2025 Market Climb — Designed by <strong>Sami Boumaiza</strong>. All rights reserved.</p>
   </div>
 </footer>

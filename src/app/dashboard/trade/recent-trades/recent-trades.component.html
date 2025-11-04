@@ -1,11 +1,47 @@
 <div class="recent-trades-card">
-  <h4 class="trades-title">{{ symbol }} Recent Trades</h4>
+  <h4 class="trades-title">Recent Trades</h4>
 
+  <!-- Trade Header -->
+  <div class="trades-header">
+    <span>Time</span>
+    <span>Price</span>
+    <span>Qty</span>
+  </div>
+
+  <!-- Trades List -->
   <div class="trades-container">
-    <div *ngFor="let trade of trades" class="trade-row" [ngClass]="trade.side">
+    <div *ngFor="let trade of trades; let i = index" 
+         class="trade-row" 
+         [ngClass]="{
+           'buy': trade.side === 'buy',
+           'sell': trade.side === 'sell',
+           'new-trade': isNewTrade(i)
+         }">
       <span class="time">{{ trade.time }}</span>
-      <span class="price">{{ trade.price }}</span>
-      <span class="quantity">{{ trade.quantity }}</span>
+      <span class="price">{{ trade.price | number:'1.2-2' }}</span>
+      <span class="quantity">{{ trade.quantity | number:'1.2-2' }}</span>
+      <span class="side-indicator" [ngClass]="trade.side">
+        <i *ngIf="trade.side === 'buy'" class="fas fa-arrow-up"></i>
+        <i *ngIf="trade.side === 'sell'" class="fas fa-arrow-down"></i>
+      </span>
+    </div>
+  </div>
+
+  <!-- Volume Summary -->
+  <div class="volume-summary">
+    <div class="volume-item">
+      <span class="volume-label">Buy Vol:</span>
+      <span class="volume-value buy">{{ getBuyVolume() | number:'1.2-2' }}</span>
+    </div>
+    <div class="volume-divider"></div>
+    <div class="volume-item">
+      <span class="volume-label">Sell Vol:</span>
+      <span class="volume-value sell">{{ getSellVolume() | number:'1.2-2' }}</span>
+    </div>
+    <div class="volume-divider"></div>
+    <div class="volume-item">
+      <span class="volume-label">Total:</span>
+      <span class="volume-value total">{{ getTotalVolume() | number:'1.2-2' }}</span>
     </div>
   </div>
 </div>

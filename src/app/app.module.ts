@@ -25,11 +25,22 @@ import { ChartComponent } from './dashboard/trade/chart/chart.component';
 import { OrderPanelComponent } from './dashboard/trade/order-panel/order-panel.component';
 import { OrderBookComponent } from './dashboard/trade/order-book/order-book.component';
 import { RecentTradesComponent } from './dashboard/trade/recent-trades/recent-trades.component';
+import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.component';
+import { WatchlistComponent } from './dashboard/trade/watchlist/watchlist.component';
+import { CommunityComponent } from './dashboard/community/community.component';
+import { LearningComponent } from './dashboard/learning/learning.component';
+import { GamificationComponent } from './dashboard/gamification/gamification.component';
+import { AchievementsComponent } from './dashboard/gamification/achievements/achievements.component';
+import { StreaksComponent } from './dashboard/gamification/streaks/streaks.component';
+import { ChallengesComponent } from './dashboard/gamification/challenges/challenges.component';
+import { LeaderboardComponent } from './dashboard/gamification/leaderboard/leaderboard.component';
+import { RewardsComponent } from './dashboard/gamification/rewards/rewards.component';
 
 
 const routes: Routes = [
   { path: '', component: LandingComponent },
   { path: 'login', component: SigninComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
 
   // Dashboard routes
   { 
@@ -37,7 +48,9 @@ const routes: Routes = [
     children: [
       { path: 'trade', component: TradeComponent },
       { path: 'portfolio', component: PortfolioComponent },
+      { path: 'community', component: CommunityComponent },
       { path: 'account', component: AccountComponent },
+      { path: 'learning', component: LearningComponent },
       { path: '', redirectTo: 'trade', pathMatch: 'full' }
     ]
   },
@@ -54,6 +67,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'personal', pathMatch: 'full' }
     ]
   },
+
 
   // fallback redirect
   { path: '**', redirectTo: '' }
@@ -83,6 +97,16 @@ const routes: Routes = [
     OrderPanelComponent,
     OrderBookComponent,
     RecentTradesComponent,
+    ForgotPasswordComponent,
+    WatchlistComponent,
+    CommunityComponent,
+    LearningComponent,
+    GamificationComponent,
+    AchievementsComponent,
+    StreaksComponent,
+    ChallengesComponent,
+    LeaderboardComponent,
+    RewardsComponent,
   ],
   imports: [
     NgbModule,

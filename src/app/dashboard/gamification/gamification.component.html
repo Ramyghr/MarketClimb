@@ -1,0 +1,85 @@
+<div class="gamification-container">
+  
+  <!-- Header with User Stats -->
+  <div class="gamification-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <span class="title-icon">🎮</span> Gamification
+      </h1>
+      <p class="page-subtitle">Level up your trading journey</p>
+    </div>
+
+    <!-- User Stats Card -->
+    <div class="user-stats-card">
+      <div class="level-badge">
+        <div class="level-number">{{ userGamification.level }}</div>
+        <div class="level-label">Level</div>
+      </div>
+      <div class="stats-info">
+        <div class="stat-row">
+          <span class="stat-label">Total Points:</span>
+          <span class="stat-value">⭐ {{ userGamification.totalPoints | number }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Global Rank:</span>
+          <span class="stat-value">#{{ userGamification.rank }}</span>
+        </div>
+        <div class="xp-progress">
+          <div class="xp-bar">
+            <div class="xp-fill" [style.width.%]="levelProgress"></div>
+          </div>
+          <span class="xp-text">{{ userGamification.currentXP }} / {{ userGamification.nextLevelXP }} XP</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'achievements'"
+      (click)="switchTab('achievements')">
+      <span class="tab-icon">🏆</span>
+      <span class="tab-label">Achievements</span>
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'streaks'"
+      (click)="switchTab('streaks')">
+      <span class="tab-icon">🔥</span>
+      <span class="tab-label">Streaks</span>
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'challenges'"
+      (click)="switchTab('challenges')">
+      <span class="tab-icon">🎯</span>
+      <span class="tab-label">Challenges</span>
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'leaderboard'"
+      (click)="switchTab('leaderboard')">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Leaderboard</span>
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab === 'rewards'"
+      (click)="switchTab('rewards')">
+      <span class="tab-icon">🎁</span>
+      <span class="tab-label">Rewards</span>
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <app-achievements *ngIf="activeTab === 'achievements'"></app-achievements>
+    <app-streaks *ngIf="activeTab === 'streaks'"></app-streaks>
+    <app-challenges-tab *ngIf="activeTab === 'challenges'"></app-challenges-tab>
+    <app-leaderboard-tab *ngIf="activeTab === 'leaderboard'"></app-leaderboard-tab>
+    <app-rewards *ngIf="activeTab === 'rewards'"></app-rewards>
+  </div>
+
+</div>

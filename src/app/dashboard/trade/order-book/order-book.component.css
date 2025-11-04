@@ -3,8 +3,8 @@
   border-radius: 12px;
   padding: 1rem;
   color: #eaeaea;
-  margin-top: 1rem;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  height: 150%;
 }
 
 .book-title {
@@ -12,46 +12,191 @@
   font-weight: 700;
   color: #00c896;
   text-align: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.spread-info {
+  text-align: center;
+  padding: 8px;
+  background-color: rgba(0, 200, 150, 0.1);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.spread-label {
+  color: #9ca3af;
+  margin-right: 8px;
+}
+
+.spread-value {
+  color: #00c896;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.spread-percent {
+  color: #6ee7b7;
+  font-size: 0.85rem;
 }
 
 .order-book-container {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 0;
 }
 
 .orders {
-  flex: 1;
   background-color: #0b1f26;
   padding: 8px;
   border-radius: 8px;
 }
 
-.order-label {
+.sell-orders {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.buy-orders {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.order-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 6px 8px;
   font-weight: bold;
-  color: #f1f1f1;
-  margin-bottom: 6px;
-  text-align: center;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
 }
 
 .order-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  font-family: monospace;
-}
-
-.sell-orders .price {
-  color: #ff4d4d;
-}
-
-.buy-orders .price {
-  color: #00c853;
-}
-
-.sell-orders .order-row:hover,
-.buy-orders .order-row:hover {
-  background-color: rgba(255,255,255,0.05);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 5px 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
   cursor: pointer;
+  border-radius: 4px;
+}
+
+.order-row:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: translateX(2px);
+}
+
+.sell-row .price {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.buy-row .price {
+  color: #51cf66;
+  font-weight: 600;
+}
+
+.quantity {
+  color: #c9d1d9;
+  text-align: center;
+}
+
+.total {
+  color: #8b949e;
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+/* Spread Indicator */
+.spread-indicator {
+  position: relative;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, rgba(255, 107, 107, 0.1), rgba(81, 207, 102, 0.1));
+}
+
+.spread-line {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #00c896, transparent);
+}
+
+.spread-text {
+  background-color: #161b22;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #00c896;
+  border: 1px solid #00c896;
+  z-index: 1;
+}
+
+/* Summary Section */
+.order-book-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+}
+
+.summary-value.buy {
+  color: #51cf66;
+}
+
+.summary-value.sell {
+  color: #ff6b6b;
+}
+
+/* Scrollbar styling */
+.orders {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.orders::-webkit-scrollbar {
+  width: 6px;
+}
+
+.orders::-webkit-scrollbar-track {
+  background: #0b1f26;
+}
+
+.orders::-webkit-scrollbar-thumb {
+  background: #00c896;
+  border-radius: 3px;
+}
+
+.orders::-webkit-scrollbar-thumb:hover {
+  background: #00a076;
 }

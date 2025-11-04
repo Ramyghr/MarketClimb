@@ -1,22 +1,32 @@
 <div class="order-panel-card">
   <h4 class="panel-title">Trade Panel</h4>
 
-
-
-  <!-- Order Type -->
-  <div class="order-type mb-2">
-    <label>Order Type:</label>
-    <select [(ngModel)]="orderType" class="form-select" title="order-type">
-      <option value="market">Market</option>
-      <option value="limit">Limit</option>
-      <option value="stop">Stop-Limit</option>
-    </select>
+  <!-- Balance Display -->
+  <div class="balance-display">
+    <span class="balance-label">Available Balance:</span>
+    <span class="balance-value">${{ balance | number:'1.2-2' }}</span>
   </div>
 
-  <!-- Symbol & Price -->
-  <div class="mb-2">
+  <!-- Buy/Sell Toggle -->
+  <div class="tab-switch mb-3">
+    <button 
+      [class.active]="orderSide === 'buy'"
+      class="buy-tab"
+      (click)="selectOrderSide('buy')">
+      Buy
+    </button>
+    <button 
+      [class.active]="orderSide === 'sell'"
+      class="sell-tab"
+      (click)="selectOrderSide('sell')">
+      Sell
+    </button>
+  </div>
+
+  <!-- Symbol Selector -->
+  <div class="form-group mb-3">
     <label>Symbol:</label>
-    <select [(ngModel)]="symbol" (change)="onSymbolChange($event)" class="form-select symbol-select" title="symbol">
+    <select [(ngModel)]="symbol" (change)="onSymbolChange($event)" title="symbol" class="form-select symbol-select">
       <optgroup label="📈 Stock Indices">
         <option value="NASDAQ:TSLA">TSLA - Tesla</option>
         <option value="NASDAQ:AAPL">AAPL - Apple</option>
@@ -33,35 +43,110 @@
     </select>
   </div>
 
-  <div *ngIf="orderType !== 'market'" class="mb-2">
-    <label>Price:</label>
-    <input type="number" [(ngModel)]="price" class="form-control" placeholder="Enter price">
+  <!-- Current Price Display -->
+  <div class="current-price mb-3">
+    <span class="price-label">Current Price:</span>
+    <span class="price-value">${{ currentPrice | number:'1.2-2' }}</span>
+  </div>
+
+  <!-- Order Type -->
+  <div class="form-group mb-3">
+    <label>Order Type:</label>
+    <select [(ngModel)]="orderType" (change)="onOrderTypeChange()" title="orderType" class="form-select">
+      <option value="market">Market Order</option>
+      <option value="limit">Limit Order</option>
+      <option value="stop">Stop-Limit Order</option>
+    </select>
+  </div>
+
+  <!-- Limit Price (if not market) -->
+  <div *ngIf="orderType !== 'market'" class="form-group mb-3">
+    <label>Limit Price:</label>
+    <input 
+      type="number" 
+      [(ngModel)]="price" 
+      class="form-control" 
+      placeholder="Enter price"
+      step="0.01">
   </div>
 
   <!-- Quantity -->
-  <div class="mb-2">
+  <div class="form-group mb-3">
     <label>Quantity:</label>
-    <input type="number" [(ngModel)]="quantity" class="form-control" placeholder="0">
+    <input 
+      type="number" 
+      [(ngModel)]="quantity" 
+      class="form-control" 
+      placeholder="0.00"
+      step="0.01">
+    
+    <!-- Quick percentage buttons -->
+    <div class="percentage-buttons mt-2">
+      <button (click)="setPercentage(25)" class="btn-percent">25%</button>
+      <button (click)="setPercentage(50)" class="btn-percent">50%</button>
+      <button (click)="setPercentage(75)" class="btn-percent">75%</button>
+      <button (click)="setPercentage(100)" class="btn-percent">100%</button>
+    </div>
   </div>
 
-  <!-- Stop-Loss / Take-Profit -->
-  <div *ngIf="orderType==='stop'" class="mb-2">
-    <label>Stop-Loss:</label>
-    <input type="number" [(ngModel)]="stopLoss" class="form-control" placeholder="Stop-Loss price">
+  <!-- Stop-Loss / Take-Profit (for stop orders) -->
+  <div *ngIf="orderType === 'stop'">
+    <div class="form-group mb-3">
+      <label>Stop-Loss:</label>
+      <input 
+        type="number" 
+        [(ngModel)]="stopLoss" 
+        class="form-control" 
+        placeholder="Stop-Loss price"
+        step="0.01">
+    </div>
+
+    <div class="form-group mb-3">
+      <label>Take-Profit:</label>
+      <input 
+        type="number" 
+        [(ngModel)]="takeProfit" 
+        class="form-control" 
+        placeholder="Take-Profit price"
+        step="0.01">
+    </div>
   </div>
 
-  <div *ngIf="orderType==='stop'" class="mb-2">
-    <label>Take-Profit:</label>
-    <input type="number" [(ngModel)]="takeProfit" class="form-control" placeholder="Take-Profit price">
+  <!-- Order Summary -->
+  <div class="order-summary mb-3">
+    <div class="summary-row">
+      <span>Total:</span>
+      <span class="summary-value">${{ calculateTotal() | number:'1.2-2' }}</span>
+    </div>
+    <div class="summary-row">
+      <span>Est. Fees:</span>
+      <span class="summary-value">${{ calculateFees() | number:'1.2-2' }}</span>
+    </div>
+    <div class="summary-row total">
+      <span>Grand Total:</span>
+      <span class="summary-value">${{ calculateTotal() + calculateFees() | number:'1.2-2' }}</span>
+    </div>
   </div>
 
-  <!-- Total -->
-  <div class="mb-3 total-display">
-    <span>Total:</span> <span>{{calculateTotal() | number:'1.2-2'}}</span>
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
   </div>
-<div class="d-flex gap-2">
-    <button class="btn buy-btn w-50 btn-success" (click)="buy()" [disabled]="quantity<=0">Buy</button>
-    <button class="btn sell-btn w-50" (click)="sell()" [disabled]="quantity<=0">Sell</button>
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
   </div>
+
+  <!-- Place Order Button -->
+  <button 
+    class="btn btn-place-order w-100"
+    [ngClass]="{'btn-buy': orderSide === 'buy', 'btn-sell': orderSide === 'sell'}"
+    (click)="placeOrder()" 
+    [disabled]="!canPlaceOrder() || isProcessing">
+    <span *ngIf="!isProcessing">
+      {{ orderSide === 'buy' ? ' Place Buy Order' : ' Place Sell Order' }}
+    </span>
+    <span *ngIf="isProcessing">
+      <i class="fa fa-spinner fa-spin"></i> Processing...
+    </span>
+  </button>
 </div>
-
