@@ -35,6 +35,9 @@ import { StreaksComponent } from './dashboard/gamification/streaks/streaks.compo
 import { ChallengesComponent } from './dashboard/gamification/challenges/challenges.component';
 import { LeaderboardComponent } from './dashboard/gamification/leaderboard/leaderboard.component';
 import { RewardsComponent } from './dashboard/gamification/rewards/rewards.component';
+import { MarketAiAgentComponent } from './shared/market-ai-agent/market-ai-agent.component';
+import { NewsComponent } from './dashboard/news/news.component';
+import { OverviewComponent } from './dashboard/overview/overview.component';
 
 
 const routes: Routes = [
@@ -46,12 +49,15 @@ const routes: Routes = [
   { 
     path: 'dashboard', component: DashboardComponent,
     children: [
+      { path: 'overview', component: OverviewComponent },
       { path: 'trade', component: TradeComponent },
       { path: 'portfolio', component: PortfolioComponent },
       { path: 'community', component: CommunityComponent },
       { path: 'account', component: AccountComponent },
       { path: 'learning', component: LearningComponent },
-      { path: '', redirectTo: 'trade', pathMatch: 'full' }
+      { path: 'game', component: GamificationComponent },
+      { path: 'news', component: NewsComponent },
+      { path: '', redirectTo: 'overview', pathMatch: 'full' }
     ]
   },
 
@@ -107,6 +113,9 @@ const routes: Routes = [
     ChallengesComponent,
     LeaderboardComponent,
     RewardsComponent,
+    MarketAiAgentComponent,
+    NewsComponent,
+    OverviewComponent,
   ],
   imports: [
     NgbModule,

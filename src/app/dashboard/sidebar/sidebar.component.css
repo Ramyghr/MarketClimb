@@ -4,8 +4,8 @@
   left: 0;
   bottom: 0;
   width: 80px; /* collapsed width */
-  background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
-  border-right: 1px solid #242424;
+  background: linear-gradient(180deg, #0d0d0d5d 0%, #1a1a1a 100%);
+  border-right: 1px solid #24242483;
   overflow: hidden;
   transition: width 0.3s ease, box-shadow 0.3s ease;
   display: flex;

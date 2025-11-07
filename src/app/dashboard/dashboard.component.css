@@ -6,7 +6,7 @@
 
 /* Sidebar overlay */
 .sidebar-container {
-  width: 70px;               /* collapsed width */
+  width: 10px;               /* collapsed width */
   transition: width 0.3s ease;
   position: absolute;        /* overlay on top of content */
   top: 0;
@@ -43,4 +43,10 @@ app-header {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+}
+.floating-agent {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 9999;
 }

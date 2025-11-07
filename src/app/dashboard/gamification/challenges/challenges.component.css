@@ -1,0 +1,76 @@
+.challenges-section { padding: 1rem 0; }
+
+.alert-success {
+  background-color: rgba(81, 207, 102, 0.15);
+  color: #51cf66;
+  border: 1px solid rgba(81, 207, 102, 0.3);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+.stats-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.summary-card { background: #161b22; border-radius: 16px; padding: 1.5rem; border: 1px solid rgba(255,255,255,.05); display: flex; gap: 1rem; align-items: center; }
+.summary-icon { font-size: 3rem; line-height: 1; }
+.summary-value { font-size: 2rem; font-weight: 700; color: #00c896; }
+.summary-label { font-size: .9rem; color: #9ca3af; margin-top: .25rem; }
+
+.filters-bar { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding: 1.5rem; background: #161b22; border-radius: 12px; border: 1px solid rgba(255,255,255,.05); flex-wrap: wrap; }
+.filter-group { display: flex; align-items: center; gap: 10px; }
+.filter-group label { color: #9ca3af; font-weight: 600; font-size: .9rem; }
+.filter-select { background: #0b1f26; color: #f1f1f1; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 8px 12px; }
+
+.challenges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+.challenge-card { background: #161b22; border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(255,255,255,.05); position: relative; overflow: hidden; transition: all .3s ease; }
+.challenge-card.completed { border-color: rgba(81,207,102,.3); }
+.challenge-card.claimed { opacity: .7; }
+.challenge-card.expired { opacity: .5; }
+.challenge-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+
+.challenge-icon {
+  width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg,#00c896,#00a076);
+  display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 1rem;
+  border: 4px solid; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+.challenge-title { font-size: 1.3rem; color: #f1f1f1; margin: 0 0 .5rem; text-align: center; }
+.challenge-description { color: #9ca3af; text-align: center; margin-bottom: 1rem; font-size: .9rem; }
+
+.challenge-meta { display: flex; justify-content: center; gap: 10px; margin-bottom: 1rem; }
+.type-badge, .category-badge { padding: 4px 12px; border-radius: 12px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+.type-badge { background: rgba(255,255,255,.1); color: #c9d1d9; }
+.category-badge { background: rgba(0,200,150,.15); color: #00c896; }
+
+.progress-container { margin-bottom: 1rem; }
+.progress-bar { height: 8px; background: rgba(255,255,255,.1); border-radius: 8px; overflow: hidden; margin-bottom: .5rem; }
+.progress-fill { height: 100%; border-radius: 8px; transition: width .3s ease; }
+.progress-text { font-size: .85rem; color: #9ca3af; text-align: center; display: block; }
+
+.points-display { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 1rem; font-weight: 700; color: #ffd43b; }
+
+.timer { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: .5rem; font-size: .85rem; color: #ff6b6b; }
+.timer-icon { font-size: 1rem; }
+
+.claim-btn {
+  background: rgba(81,207,102,.15); color: #51cf66; border: 1px solid rgba(81,207,102,.3);
+  padding: 8px 12px; border-radius: 10px; margin-top: 1rem; text-align: center; font-size: .85rem; font-weight: 600;
+  cursor: pointer; width: 100%;
+}
+.claim-btn:hover { background: rgba(81,207,102,.25); }
+
+.status-badge {
+  padding: 6px 12px; border-radius: 10px; margin-top: .5rem; text-align: center; font-size: .8rem; font-weight: 600;
+}
+.status-badge.completed { background: rgba(81,207,102,.15); color: #51cf66; border: 1px solid rgba(81,207,102,.3); }
+.status-badge.claimed { background: rgba(255,255,255,.1); color: #9ca3af; }
+.status-badge.expired { background: rgba(255,107,107,.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,.3); }
+
+.expired-overlay {
+  position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.8); color: #ff6b6b; padding: 8px 16px; border-radius: 10px;
+  font-weight: 700; font-size: .9rem;
+}
+
+.empty-state { text-align: center; padding: 4rem; color: #9ca3af; }
+.empty-icon { font-size: 4rem; margin-bottom: 1rem; }

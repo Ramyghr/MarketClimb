@@ -1,0 +1,260 @@
+<div class="overview-container">
+  
+  <!-- Header Section -->
+  <div class="overview-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <i class="fas fa-chart-line"></i>
+        Dashboard Overview
+      </h1>
+      <p class="page-subtitle">Welcome back! Here's your trading summary</p>
+    </div>
+    <div class="header-actions">
+      <button class="action-btn primary" (click)="navigateToTrade()">
+        <i class="fas fa-rocket"></i>
+        Start Trading
+      </button>
+      <button class="action-btn secondary" (click)="navigateToFunding()">
+        <i class="fas fa-wallet"></i>
+        Add Funds
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Grid Layout -->
+  <div class="overview-grid">
+    
+    <!-- Portfolio Summary - Large Card -->
+    <div class="grid-card portfolio-summary">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-briefcase"></i>
+          Portfolio Summary
+        </h3>
+        <button class="view-details-btn" (click)="navigateToPortfolio()">
+          View Details <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+      <div class="card-content">
+        <div class="balance-section">
+          <div class="balance-label">Total Balance</div>
+          <div class="balance-value">${{ totalBalance | number:'1.2-2' }}</div>
+          <div class="balance-change" [class.positive]="totalProfit >= 0" [class.negative]="totalProfit < 0">
+            <i [class]="totalProfit >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+            ${{ totalProfit | number:'1.2-2' }} ({{ totalProfitPercent | number:'1.2-2' }}%)
+          </div>
+        </div>
+        
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-label">Today's Change</div>
+            <div class="stat-value" [class.positive]="dayChange >= 0" [class.negative]="dayChange < 0">
+              <i [class]="dayChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+              ${{ dayChange | number:'1.2-2' }}
+            </div>
+            <div class="stat-percent" [class.positive]="dayChange >= 0" [class.negative]="dayChange < 0">
+              {{ dayChangePercent | number:'1.2-2' }}%
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Active Positions</div>
+            <div class="stat-value">{{ activePositions.length }}</div>
+            <div class="stat-percent">Positions</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value">{{ recentTrades.length }}</div>
+            <div class="stat-percent">This Week</div>
+          </div>
+        </div>
+
+        <!-- Mini Performance Chart -->
+        <div class="mini-chart">
+          <div class="chart-placeholder">
+            <svg viewBox="0 0 400 80" class="performance-svg">
+              <polyline
+                [attr.points]="chartPoints"
+                fill="none"
+                stroke="#00c896"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <circle *ngFor="let val of performanceChartData.values; let i = index"
+                [attr.cx]="i * 80"
+                [attr.cy]="80 - (val - 95000) / 500"
+                r="3"
+                fill="#00c896"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Indices -->
+    <div class="grid-card market-indices">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-chart-area"></i>
+          Market Indices
+        </h3>
+      </div>
+      <div class="card-content">
+        <div class="indices-list">
+          <div *ngFor="let index of marketIndices" class="index-item" (click)="navigateToTrade(index.symbol)">
+            <div class="index-info">
+              <div class="index-symbol">{{ index.symbol }}</div>
+              <div class="index-name">{{ index.name }}</div>
+            </div>
+            <div class="index-stats">
+              <div class="index-price">${{ index.price | number:'1.2-2' }}</div>
+              <div class="index-change" [class.positive]="index.change >= 0" [class.negative]="index.change < 0">
+                <i [class]="index.change >= 0 ? 'fas fa-caret-up' : 'fas fa-caret-down'"></i>
+                {{ index.changePercent | number:'1.2-2' }}%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Positions -->
+    <div class="grid-card active-positions">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-folder-open"></i>
+          Active Positions
+        </h3>
+        <button class="view-all-btn" (click)="navigateToPortfolio()">View All</button>
+      </div>
+      <div class="card-content">
+        <div class="positions-table">
+          <div *ngFor="let position of activePositions" class="position-row" (click)="navigateToTrade(position.symbol)">
+            <div class="position-symbol">
+              <div class="symbol-badge">{{ position.symbol }}</div>
+              <div class="symbol-name">{{ position.name }}</div>
+            </div>
+            <div class="position-shares">{{ position.shares }} shares</div>
+            <div class="position-value">${{ position.totalValue | number:'1.2-2' }}</div>
+            <div class="position-profit" [class.positive]="position.profit >= 0" [class.negative]="position.profit < 0">
+              <i [class]="position.profit >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+              {{ position.profitPercent | number:'1.2-2' }}%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Gainers & Losers -->
+    <div class="grid-card top-movers">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-fire"></i>
+          Top Movers
+        </h3>
+      </div>
+      <div class="card-content">
+        <div class="movers-tabs">
+          <div class="tab active">Gainers</div>
+          <div class="tab">Losers</div>
+        </div>
+        
+        <div class="movers-list gainers">
+          <div *ngFor="let gainer of topGainers" class="mover-item" (click)="navigateToTrade(gainer.symbol)">
+            <div class="mover-info">
+              <div class="mover-symbol">{{ gainer.symbol }}</div>
+              <div class="mover-name">{{ gainer.name }}</div>
+            </div>
+            <div class="mover-stats">
+              <div class="mover-price">${{ gainer.price | number:'1.2-2' }}</div>
+              <div class="mover-change positive">
+                <i class="fas fa-arrow-up"></i>
+                {{ gainer.changePercent | number:'1.2-2' }}%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Trades -->
+    <div class="grid-card recent-trades">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-history"></i>
+          Recent Trades
+        </h3>
+        <button class="view-all-btn" (click)="navigateToPortfolio()">View All</button>
+      </div>
+      <div class="card-content">
+        <div class="trades-table">
+          <div *ngFor="let trade of recentTrades" class="trade-row">
+            <div class="trade-type" [class.buy]="trade.type === 'buy'" [class.sell]="trade.type === 'sell'">
+              {{ trade.type.toUpperCase() }}
+            </div>
+            <div class="trade-symbol">{{ trade.symbol }}</div>
+            <div class="trade-shares">{{ trade.shares }} shares</div>
+            <div class="trade-price">${{ trade.price | number:'1.2-2' }}</div>
+            <div class="trade-profit" [class.positive]="trade.profit && trade.profit >= 0" [class.negative]="trade.profit && trade.profit < 0">
+              {{ trade.profit ? (trade.profit >= 0 ? '+' : '') + (trade.profit | number:'1.2-2') : '-' }}
+            </div>
+            <div class="trade-time">{{ getTimeAgo(trade.date) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Watchlist -->
+    <div class="grid-card watchlist-preview">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-star"></i>
+          Watchlist
+        </h3>
+        <button class="view-all-btn" (click)="navigateToTrade()">View All</button>
+      </div>
+      <div class="card-content">
+        <div class="watchlist-items">
+          <div *ngFor="let item of watchlist" class="watchlist-item" (click)="navigateToTrade(item.symbol)">
+            <div class="watchlist-symbol">{{ item.symbol }}</div>
+            <div class="watchlist-price">${{ item.price | number:'1.2-2' }}</div>
+            <div class="watchlist-change" [class.positive]="item.change >= 0" [class.negative]="item.change < 0">
+              <i [class]="item.change >= 0 ? 'fas fa-caret-up' : 'fas fa-caret-down'"></i>
+              {{ item.changePercent | number:'1.2-2' }}%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market News -->
+    <div class="grid-card market-news">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-newspaper"></i>
+          Market News
+        </h3>
+        <button class="view-all-btn" (click)="viewAllNews()">View All</button>
+      </div>
+      <div class="card-content">
+        <div class="news-list">
+          <div *ngFor="let news of marketNews" class="news-item" [ngClass]="getSentimentClass(news.sentiment)">
+            <div class="news-sentiment">{{ getSentimentIcon(news.sentiment) }}</div>
+            <div class="news-content">
+              <div class="news-title">{{ news.title }}</div>
+              <div class="news-meta">
+                <span class="news-source">{{ news.source }}</span>
+                <span class="news-time">{{ news.time }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

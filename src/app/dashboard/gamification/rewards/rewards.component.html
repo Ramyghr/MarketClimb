@@ -1,1 +1,122 @@
-<p>rewards works!</p>
+<div class="rewards-section">
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="stats-summary">
+    <div class="summary-card">
+      <div class="summary-icon">Wallet</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ totalPoints }}</div>
+        <div class="summary-label">Available Points</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">Package</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ ownedCount }}</div>
+        <div class="summary-label">Owned Items</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">Shop</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ availableCount }}</div>
+        <div class="summary-label">Available to Buy</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="filters-bar">
+    <div class="search-group">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Search rewards..."
+        class="search-input">
+    </div>
+    <div class="filter-group">
+      <label>Category:</label>
+      <select [(ngModel)]="selectedCategory" class="filter-select" title="category">
+        <option value="all">All Categories</option>
+        <option value="cosmetic">Cosmetic</option>
+        <option value="boost">Boost</option>
+        <option value="feature">Feature</option>
+        <option value="premium">Premium</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="selectedStatus" class="filter-select" title="status">
+        <option value="all">All</option>
+        <option value="available">Available</option>
+        <option value="owned">Owned</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Rewards Grid -->
+  <div class="rewards-grid">
+    <div
+      *ngFor="let reward of filteredRewards"
+      class="reward-card"
+      [class.owned]="reward.owned"
+      [class.unavailable]="!reward.available">
+      
+      <!-- Reward Icon -->
+      <div class="reward-icon" [style.border-color]="getCategoryColor(reward.category)">
+        {{ reward.icon }}
+      </div>
+
+      <!-- Info -->
+      <div class="reward-info">
+        <h3 class="reward-title">{{ reward.name }}</h3>
+        <p class="reward-description">{{ reward.description }}</p>
+
+        <div class="reward-meta">
+          <span class="category-badge">
+            {{ reward.category | titlecase }}
+          </span>
+          <span *ngIf="reward.owned" class="owned-badge">Owned</span>
+        </div>
+
+        <!-- Cost -->
+        <div class="cost-display" *ngIf="!reward.owned">
+          <span class="cost-icon">Coin</span>
+          <span class="cost-value">{{ reward.cost | number }} pts</span>
+        </div>
+
+        <!-- Purchase Button -->
+        <button
+          *ngIf="!reward.owned && reward.available && totalPoints >= reward.cost"
+          class="purchase-btn"
+          (click)="purchase(reward.id)">
+          Purchase
+        </button>
+
+        <!-- Insufficient Points -->
+        <div
+          *ngIf="!reward.owned && reward.available && totalPoints < reward.cost"
+          class="insufficient">
+          Not enough points
+        </div>
+
+        <!-- Unavailable -->
+        <div *ngIf="!reward.available" class="unavailable-overlay">
+          Coming Soon
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredRewards.length === 0" class="empty-state">
+    <div class="empty-icon">Gift</div>
+    <p>No rewards match your filters</p>
+  </div>
+
+</div>

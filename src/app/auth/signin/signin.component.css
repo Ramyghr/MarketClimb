@@ -56,7 +56,7 @@
 }
 
 .input-group-focus input {
-  border-color: #f5365c !important;
+  border-color: #00c896 !important;
   box-shadow: 0 0 0 0.2rem rgba(245, 54, 92, 0.25) !important;
 }
 .nc-icon {
@@ -89,8 +89,8 @@
 }
 /* In your dashboard or global styles */
 a.active {
-  color: #f5365c !important;
+  color: #00c896 !important;
   background-color: rgba(245, 54, 92, 0.1);
-  border-left: 3px solid #f5365c;
+  border-left: 3px solid #00c896;
   font-weight: 600;
 }

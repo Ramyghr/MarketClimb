@@ -77,8 +77,8 @@
   <div class="tab-content">
     <app-achievements *ngIf="activeTab === 'achievements'"></app-achievements>
     <app-streaks *ngIf="activeTab === 'streaks'"></app-streaks>
-    <app-challenges-tab *ngIf="activeTab === 'challenges'"></app-challenges-tab>
-    <app-leaderboard-tab *ngIf="activeTab === 'leaderboard'"></app-leaderboard-tab>
+    <app-challenges *ngIf="activeTab === 'challenges'"></app-challenges>
+    <app-leaderboard *ngIf="activeTab === 'leaderboard'"></app-leaderboard>
     <app-rewards *ngIf="activeTab === 'rewards'"></app-rewards>
   </div>
 

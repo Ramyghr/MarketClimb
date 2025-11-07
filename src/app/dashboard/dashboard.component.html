@@ -10,11 +10,15 @@
 
   <!-- Main area -->
   <div class="main-area">
-    <app-header></app-header>
+    <app-header (openNews)="newsOverlay.show()"></app-header>
+    <app-news #newsOverlay></app-news>
+
 
     <div class="dashboard-content">
       <router-outlet></router-outlet>
     </div>
   </div>
+<app-market-ai-agent class="floating-agent"></app-market-ai-agent>
+
 
 </div>

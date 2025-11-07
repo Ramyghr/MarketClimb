@@ -1,1 +1,116 @@
-<p>streaks works!</p>
+<div class="streaks-section">
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="stats-summary">
+    <div class="summary-card">
+      <div class="summary-icon">Current Streak</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ streak?.currentStreak ?? 0 }}</div>
+        <div class="summary-label">Active Days</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon">Longest Streak</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ streak?.longestStreak ?? 0 }}</div>
+        <div class="summary-label">Best Ever</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon">Total Points</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ totalPointsFromMilestones }}</div>
+        <div class="summary-label">From Milestones</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Milestones (grid cards) -->
+  <div class="milestones-grid">
+    <div
+      *ngFor="let m of streak?.milestones"
+      class="milestone-card"
+      [class.claimed]="m.claimed"
+      [class.unlocked]="(streak?.currentStreak ?? 0) >= m.days"
+[class.locked]="(streak?.currentStreak ?? 0) < m.days"
+    >   
+      <!-- Milestone Icon -->
+      <div class="milestone-icon" [style.border-color]="getMilestoneColor(m.days)">
+        {{ m.icon }}
+      </div>
+
+      <!-- Info -->
+      <div class="milestone-info">
+        <h3 class="milestone-title">{{ m.days }}-Day Milestone</h3>
+        <p class="milestone-description">Earn {{ m.reward }} points</p>
+
+        <!-- Progress -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              [style.width.%]="progressPercent(m.days)"
+              [style.background-color]="getMilestoneColor(m.days)">
+            </div>
+          </div>
+          <span class="progress-text">
+            {{ streak?.currentStreak ?? 0 }} / {{ m.days }} days
+          </span>
+        </div>
+
+        <!-- Points -->
+        <div class="points-display">
+          <span class="points-icon">Star</span>
+          <span class="points-value">{{ m.reward }} points</span>
+        </div>
+
+        <!-- Claimed badge -->
+        <div *ngIf="m.claimed" class="claimed-badge">
+          <span class="badge-icon">Check</span> Claimed
+        </div>
+
+        <!-- Claim button -->
+        <button
+          *ngIf="!m.claimed && streak.currentStreak >= m.days"
+          class="claim-btn"
+          (click)="claimMilestone(m.days)">
+          Claim Reward
+        </button>
+
+        <!-- Locked overlay -->
+        <div *ngIf="streak.currentStreak < m.days" class="locked-overlay">
+          Locked
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Streak Calendar (optional visual) -->
+  <div class="calendar-section" *ngIf="streak?.streakDates?.length">
+    <h3 class="calendar-title">Streak Calendar</h3>
+    <div class="calendar-grid">
+      <ng-container *ngFor="let date of last30Days">
+        <div
+          class="calendar-day"
+          [class.active]="isStreakDay(date)"
+          [class.today]="isToday(date)">
+          {{ date.getDate() }}
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!streak" class="empty-state">
+    <div class="empty-icon">No Data</div>
+    <p>No streak data available</p>
+  </div>
+
+</div>

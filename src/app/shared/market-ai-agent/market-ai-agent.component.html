@@ -1,0 +1,34 @@
+<div class="ai-agent-container" [class.open]="isOpen">
+  <!-- Floating Button -->
+  <div class="chat-toggle" (click)="toggleChat()" *ngIf="!isOpen">
+    <img src="assets/img/LOGO.png" alt="AI" class="chat-icon" />
+  </div>
+
+  <!-- Chat Box -->
+  <div class="chat-box" *ngIf="isOpen">
+    <div class="chat-header">
+      <div class="header-left">
+        <img src="assets/img/LOGO.png" alt="AI" class="header-logo" />
+        <h4>Market Climb AI</h4>
+      </div>
+      <button class="close-btn" (click)="toggleChat()">✖</button>
+    </div>
+
+    <div class="chat-body" #chatBody>
+      <div *ngFor="let msg of messages" 
+           [ngClass]="{'user': msg.from === 'user', 'bot': msg.from === 'bot'}"
+           class="message">
+        <div class="bubble">{{ msg.text }}</div>
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input 
+        type="text" 
+        [(ngModel)]="userInput" 
+        placeholder="Ask me about trading..." 
+        (keyup.enter)="sendMessage()" />
+      <button (click)="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>

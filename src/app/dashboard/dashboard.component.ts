@@ -9,6 +9,7 @@ export class DashboardComponent {
   sidebarExpanded: boolean = false;
   selectedSymbol: string = 'NASDAQ:TSLA'; // <-- add this
 
+  
   // Add the buy/sell functions
   buy() {
     console.log(`Buying ${this.selectedSymbol}`);

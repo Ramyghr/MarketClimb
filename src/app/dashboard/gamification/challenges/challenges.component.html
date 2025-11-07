@@ -1,1 +1,152 @@
-<p>challenges works!</p>
+<div class="challenges-section">
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="stats-summary">
+    <div class="summary-card">
+      <div class="summary-icon">Target</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ stats.active }}</div>
+        <div class="summary-label">Active</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">Check</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ stats.completed }}</div>
+        <div class="summary-label">Completed</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">Star</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ stats.totalReward }}</div>
+        <div class="summary-label">Total Reward</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Type:</label>
+      <select [(ngModel)]="selectedType" title="type" class="filter-select">
+        <option value="all">All Types</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Category:</label>
+      <select [(ngModel)]="selectedCategory" title="category" class="filter-select">
+        <option value="all">All Categories</option>
+        <option value="Trading">Trading</option>
+        <option value="Learning">Learning</option>
+        <option value="Social">Social</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="selectedStatus" title="s"class="filter-select">
+        <option value="all">All</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+        <option value="claimed">Claimed</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Challenges Grid -->
+  <div class="challenges-grid">
+    <div
+      *ngFor="let challenge of filteredChallenges"
+      class="challenge-card"
+      [class.completed]="challenge.completed"
+      [class.claimed]="challenge.claimed"
+      [class.expired]="isExpired(challenge.expiresAt)">
+      
+      <!-- Challenge Icon -->
+      <div class="challenge-icon" [style.border-color]="getTypeColor(challenge.type)">
+        {{ challenge.icon }}
+      </div>
+
+      <!-- Info -->
+      <div class="challenge-info">
+        <h3 class="challenge-title">{{ challenge.title }}</h3>
+        <p class="challenge-description">{{ challenge.description }}</p>
+
+        <div class="challenge-meta">
+          <span class="type-badge">
+            {{ getTypeIcon(challenge.type) }} {{ challenge.type | titlecase }}
+          </span>
+          <span class="category-badge">
+            {{ challenge.category }}
+          </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              [style.width.%]="(challenge.progress / challenge.maxProgress) * 100"
+              [style.background-color]="getTypeColor(challenge.type)">
+            </div>
+          </div>
+          <span class="progress-text">
+            {{ challenge.progress }} / {{ challenge.maxProgress }}
+          </span>
+        </div>
+
+        <!-- Reward -->
+        <div class="points-display">
+          <span class="points-icon">Star</span>
+          <span class="points-value">{{ challenge.reward }} points</span>
+        </div>
+
+        <!-- Expiration Timer -->
+        <div class="timer" *ngIf="!challenge.claimed && !isExpired(challenge.expiresAt)">
+          <span class="timer-icon">Clock</span>
+          <span class="timer-text">{{ timeLeft(challenge.expiresAt) }}</span>
+        </div>
+
+        <!-- Claim Button -->
+        <button
+          *ngIf="challenge.completed && !challenge.claimed && !isExpired(challenge.expiresAt)"
+          class="claim-btn"
+          (click)="claimChallenge(challenge.id)">
+          Claim Reward
+        </button>
+
+        <!-- Status Badges -->
+        <div *ngIf="challenge.completed && !challenge.claimed" class="status-badge completed">
+          Ready to Claim
+        </div>
+        <div *ngIf="challenge.claimed" class="status-badge claimed">
+          Claimed
+        </div>
+        <div *ngIf="isExpired(challenge.expiresAt)" class="status-badge expired">
+          Expired
+        </div>
+
+        <!-- Expired Overlay -->
+        <div *ngIf="isExpired(challenge.expiresAt)" class="expired-overlay">
+          Expired
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredChallenges.length === 0" class="empty-state">
+    <div class="empty-icon">Target</div>
+    <p>No challenges match your filters</p>
+  </div>
+
+</div>

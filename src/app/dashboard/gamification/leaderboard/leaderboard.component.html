@@ -1,1 +1,114 @@
-<p>leaderboard works!</p>
+<div class="leaderboard-section">
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="stats-summary">
+    <div class="summary-card">
+      <div class="summary-icon">Trophy</div>
+      <div class="summary-info">
+        <div class="summary-value">#{{ yourRank }}</div>
+        <div class="summary-label">Your Rank</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">Star</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ yourPoints }}</div>
+        <div class="summary-label">Your Points</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">Users</div>
+      <div class="summary-info">
+        <div class="summary-value">{{ totalUsers }}</div>
+        <div class="summary-label">Total Players</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="filters-bar">
+    <div class="search-group">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Search username..."
+        class="search-input">
+    </div>
+    <div class="filter-group">
+      <label>Rank Range:</label>
+      <select [(ngModel)]="rankFilter" class="filter-select" title="filter">
+        <option value="all">All Ranks</option>
+        <option value="top10">Top 10</option>
+        <option value="top50">Top 50</option>
+        <option value="top100">Top 100</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Sort By:</label>
+      <select [(ngModel)]="sortBy" class="filter-select" title="s">
+        <option value="points">Points</option>
+        <option value="level">Level</option>
+        <option value="rank">Rank</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Leaderboard Table -->
+  <div class="leaderboard-table">
+    <div class="table-header">
+      <div class="col-rank">Rank</div>
+      <div class="col-user">Player</div>
+      <div class="col-level">Level</div>
+      <div class="col-points">Points</div>
+      <div class="col-change">Change</div>
+    </div>
+
+    <div
+      *ngFor="let entry of filteredLeaderboard; trackBy: trackByUserId"
+      class="table-row"
+      [class.you]="entry.username === 'You'"
+      [class.top3]="entry.rank <= 3">
+      
+      <div class="col-rank">
+        <span *ngIf="entry.rank <= 3" class="rank-badge">
+          {{ entry.badge }}
+        </span>
+        <span *ngIf="entry.rank > 3">#{{ entry.rank }}</span>
+      </div>
+
+      <div class="col-user">
+        <img [src]="entry.avatar" alt="Avatar" class="user-avatar">
+        <span class="username">{{ entry.username }}</span>
+      </div>
+
+      <div class="col-level">
+        <span class="level-badge">Lvl {{ entry.level }}</span>
+      </div>
+
+      <div class="col-points">
+        <span class="points-value">{{ entry.points | number }}</span>
+      </div>
+
+      <div class="col-change" [class.up]="entry.change > 0" [class.down]="entry.change < 0">
+        <span *ngIf="entry.change > 0" class="change-icon">Up Arrow</span>
+        <span *ngIf="entry.change < 0" class="change-icon">Down Arrow</span>
+        <span *ngIf="entry.change !== 0" class="change-value">
+          {{ entry.change > 0 ? '+' : '' }}{{ entry.change }}
+        </span>
+        <span *ngIf="entry.change === 0">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="filteredLeaderboard.length === 0" class="empty-state">
+    <div class="empty-icon">Trophy</div>
+    <p>No players match your filters</p>
+  </div>
+
+</div>

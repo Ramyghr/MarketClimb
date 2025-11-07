@@ -1,49 +1,196 @@
-<nav
-  class="navbar navbar-expand-lg fixed-top"
-  [ngClass]="{'navbar-transparent': !isDashboard, 'navbar-dark bg-dark': isDashboard}"
->
- <div class="container">
-  <div class="navbar-translate">
-    <a class="navbar-brand" href="#home">
-      <img src="assets/img/LOGO.png" alt="Market Climb Logo" class="navbar-logo">
-      Market Climb
-    </a>
-  
-      <!-- Hamburger toggle for small screens -->
-      <button *ngIf="!hideSidebarToggle" class="navbar-toggler" type="button" (click)="sidebarToggle()" aria-label="Toggle navigation" title="Toggle navigation">
-        <span class="navbar-toggler-bar bar1" aria-hidden="true"></span>
-        <span class="navbar-toggler-bar bar2" aria-hidden="true"></span>
-        <span class="navbar-toggler-bar bar3" aria-hidden="true"></span>
-        <span class="sr-only">Toggle navigation</span>
+<nav class="modern-header" [class.dashboard-mode]="isDashboard">
+  <div class="header-container">
+    
+    <!-- Left Section: Logo & Brand -->
+    <div class="header-left">
+      <a class="brand-logo" routerLink="/" [routerLink]="isDashboard ? '/dashboard/overview' : '/'">
+        <img src="assets/img/LOGO.png" alt="Market Climb Logo" class="logo-image">
+        <span class="brand-name">Market<span class="brand-accent">Climb</span></span>
+      </a>
+
+      <!-- Dashboard Quick Links (only show in dashboard) -->
+      <div *ngIf="isDashboard" class="quick-links">
+        <a routerLink="/dashboard/trade" routerLinkActive="active" class="quick-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Trade</span>
+        </a>
+        <a routerLink="/dashboard/portfolio" routerLinkActive="active" class="quick-link">
+          <i class="fas fa-briefcase"></i>
+          <span>Portfolio</span>
+        </a>
+        <a routerLink="/dashboard/community" routerLinkActive="active" class="quick-link">
+          <i class="fas fa-users"></i>
+          <span>Community</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Center Section: Balance (only in dashboard when logged in) -->
+    <div *ngIf="isDashboard && isLoggedIn" class="header-center">
+      <div class="balance-card">
+        <div class="balance-label">Total Balance</div>
+        <div class="balance-amount">
+          <span *ngIf="balanceVisible" class="amount">
+            ${{ formatBalance(userBalance) }}
+          </span>
+          <span *ngIf="!balanceVisible" class="amount-hidden">••••••</span>
+          <button class="balance-toggle" title="balance" (click)="toggleBalanceVisibility()" [title]="balanceVisible ? 'Hide balance' : 'Show balance'">
+            <i [class]="balanceVisible ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Section: Actions & Profile -->
+    <div class="header-right">
+      
+      <!-- Landing Page Links (only when not in dashboard) -->
+      <div *ngIf="!isDashboard" class="landing-nav">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#about" class="nav-link">About</a>
+      </div>
+
+      <!-- Dashboard Actions (only in dashboard) -->
+      <div *ngIf="isDashboard && isLoggedIn" class="header-actions">
+        
+        <!-- News Button -->
+        <button 
+  class="action-btn news-btn" 
+  (click)="onNewsClick()" 
+  title="Market News">
+  <i class="fas fa-newspaper"></i> News
+</button>
+          
+
+        <!-- Notifications -->
+        <div class="notification-wrapper">
+          <button class="action-btn notification-trigger" (click)="toggleNotifications()" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span *ngIf="unreadCount > 0" class="notification-badge">{{ unreadCount }}</span>
+          </button>
+
+          <!-- Notifications Dropdown -->
+          <div class="notifications-dropdown" *ngIf="notificationsOpen" @slideDown>
+            <div class="dropdown-header">
+              <h4>Notifications</h4>
+              <button class="clear-btn">Mark all read</button>
+            </div>
+            <div class="notifications-list">
+              <div *ngFor="let notif of notifications" 
+                   class="notification-item" 
+                   [class.unread]="notif.unread"
+                   [ngClass]="getNotificationClass(notif.type)">
+                <div class="notif-icon">{{ notif.icon }}</div>
+                <div class="notif-content">
+                  <div class="notif-title">{{ notif.title }}</div>
+                  <div class="notif-message">{{ notif.message }}</div>
+                  <div class="notif-time">{{ notif.time }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="dropdown-footer">
+              <a routerLink="/dashboard/notifications" class="view-all-link">View All Notifications</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <button class="action-btn" routerLink="/dashboard/account" title="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+      </div>
+
+      <!-- Profile / Auth -->
+      <div *ngIf="isLoggedIn" class="profile-section">
+        <button class="profile-trigger" (click)="toggleProfileDropdown()">
+          <img [src]="userAvatar"title="user" [alt]="userName" class="profile-avatar">
+          <span class="profile-name">{{ userName }}</span>
+          <i class="fas fa-chevron-down profile-arrow" [class.rotated]="profileDropdownOpen"></i>
+        </button>
+
+        <!-- Profile Dropdown -->
+        <div class="profile-dropdown" *ngIf="profileDropdownOpen" @slideDown>
+          <div class="dropdown-user-info">
+            <img [src]="userAvatar" title="user" [alt]="userName" class="dropdown-avatar">
+            <div class="dropdown-user-details">
+              <div class="dropdown-user-name">{{ userName }}</div>
+              <div class="dropdown-user-email">trader@marketclimb.com</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" (click)="goToProfile()">
+            <i class="fas fa-user"></i>
+            <span>My Profile</span>
+          </a>
+          <a class="dropdown-item" (click)="goToFunding()">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet & Funding</span>
+          </a>
+          <a class="dropdown-item" routerLink="/dashboard/portfolio">
+            <i class="fas fa-chart-pie"></i>
+            <span>Portfolio</span>
+          </a>
+          <a class="dropdown-item" (click)="goToSettings()">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item logout" (click)="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Join Now Button (when not logged in) -->
+      <a *ngIf="!isLoggedIn" class="join-btn" routerLink="/register">
+        <i class="fas fa-rocket"></i>
+        Join Now
+      </a>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" title="Menu">
+        <span class="hamburger-line" [class.open]="mobileMenuOpen"></span>
+        <span class="hamburger-line" [class.open]="mobileMenuOpen"></span>
+        <span class="hamburger-line" [class.open]="mobileMenuOpen"></span>
       </button>
     </div>
 
-    <div class="collapse navbar-collapse justify-content-end" [ngClass]="{'show': sidebarVisible}">
-      <ul class="navbar-nav">
+  </div>
 
-        <!-- Navigation Links -->
-        <li class="nav-item" [class.active]="activeSection === 'home'">
-          <a class="nav-link" href="#home">Home</a>
-        </li>
-        <li class="nav-item" [class.active]="activeSection === 'features'">
-          <a class="nav-link" href="#features">Features</a>
-        </li>
-        <li class="nav-item" [class.active]="activeSection === 'about'">
-          <a class="nav-link" href="#about">About</a>
-        </li>
-
-        <!-- Dynamic Buttons -->
-        <li *ngIf="!isLoggedIn" class="nav-item">
-          <a class="btn btn-round btn-primary" routerLink="/register">Join Now</a>
-        </li>
-        <li *ngIf="isLoggedIn" class="nav-item">
-          <a class="nav-link" routerLink="/profile">Profile</a>
-        </li>
-        <li *ngIf="isLoggedIn" class="nav-item">
-          <a class="nav-link" routerLink="/funding">Funding</a>
-        </li>
-
-      </ul>
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" *ngIf="mobileMenuOpen" @slideDown>
+    <div *ngIf="!isDashboard" class="mobile-nav">
+      <a href="#home" class="mobile-nav-link" (click)="mobileMenuOpen = false">Home</a>
+      <a href="#features" class="mobile-nav-link" (click)="mobileMenuOpen = false">Features</a>
+      <a href="#about" class="mobile-nav-link" (click)="mobileMenuOpen = false">About</a>
+    </div>
+    
+    <div *ngIf="isDashboard" class="mobile-nav">
+      <a routerLink="/dashboard/trade" class="mobile-nav-link" (click)="mobileMenuOpen = false">
+        <i class="fas fa-chart-line"></i> Trade
+      </a>
+      <a routerLink="/dashboard/portfolio" class="mobile-nav-link" (click)="mobileMenuOpen = false">
+        <i class="fas fa-briefcase"></i> Portfolio
+      </a>
+      <a routerLink="/dashboard/community" class="mobile-nav-link" (click)="mobileMenuOpen = false">
+        <i class="fas fa-users"></i> Community
+      </a>
+      <a (click)="openNews.emit(); mobileMenuOpen = false" class="mobile-nav-link">
+        <i class="fas fa-newspaper"></i> News
+      </a>
+    </div>
+    
+    <div *ngIf="isLoggedIn" class="mobile-balance">
+      <div class="balance-label">Total Balance</div>
+      <div class="balance-amount">
+        <span *ngIf="balanceVisible">${{ formatBalance(userBalance) }}</span>
+        <span *ngIf="!balanceVisible">••••••</span>
+        <button (click)="toggleBalanceVisibility()" title="balance visibility">
+          <i [class]="balanceVisible ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
+        </button>
+      </div>
     </div>
   </div>
 </nav>
