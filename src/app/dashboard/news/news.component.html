@@ -5,16 +5,27 @@
     <div class="news-header">
       <div class="header-left">
         <h2 class="news-title">
-          <i class="fas fa-newspaper"></i>
-          Market News
+          Newspaper Market News
         </h2>
         <span class="live-indicator">
           <span class="pulse-dot"></span>
           Live Updates
         </span>
+        <!-- Dans le header, à droite du Live Updates -->
+
+<!-- Ajoute ce bouton à côté du close -->
+<div class="header-right">
+  <button class="refresh-btn" (click)="refreshNews()" title="Refresh news">
+    <i class="fas fa-sync-alt" [class.spin]="isRefreshing"></i>
+    <span *ngIf="isRefreshing">Refreshing...</span>
+  </button>
+  <button class="close-btn" title="close" (click)="hide()">
+    Close
+  </button>
+</div>
       </div>
       <button class="close-btn" title="close" (click)="hide()">
-        <i class="fas fa-times"></i>
+        Close
       </button>
     </div>
 
@@ -24,8 +35,8 @@
         <i class="fas fa-search search-icon"></i>
         <input 
           type="text" 
-          [(ngModel)]="searchQuery"
-          (input)="onSearchChange()"
+          [value]="searchQuery"
+          (input)="onSearchInput($any($event.target).value)"
           placeholder="Search news, symbols..."
           class="search-input">
       </div>
@@ -41,13 +52,13 @@
           class="filter-tab" 
           [class.active]="activeFilter === 'trending'"
           (click)="setFilter('trending')">
-          <i class="fas fa-fire"></i> Trending
+          Fire Trending
         </button>
         <button 
           class="filter-tab" 
           [class.active]="activeFilter === 'bookmarked'"
           (click)="setFilter('bookmarked')">
-          <i class="fas fa-bookmark"></i> Saved
+          Bookmark Saved
         </button>
       </div>
     </div>
@@ -63,27 +74,42 @@
       </button>
     </div>
 
-    <!-- News Feed -->
-    <div class="news-feed">
-      <div *ngIf="filteredArticles.length === 0" class="no-results">
-        <i class="fas fa-inbox"></i>
-        <p>No articles found</p>
-      </div>
+    <!-- News Feed with Infinite Scroll -->
+    <div class="news-feed" (scroll)="onScroll()">
+      
+      <!-- Skeleton Loading (initial load) -->
+      <ng-container *ngIf="loading && articles.length === 0">
+        <div class="news-card skeleton" *ngFor="let _ of [1,2,3,4,5,6]">
+          <div class="article-image skeleton-image"></div>
+          <div class="article-content">
+            <div class="article-header">
+              <div class="source-info">
+                <span class="source-icon">N</span>
+                <span class="source-name">
+                  <div class="skeleton-line" style="width: 80px; height: 16px;"></div>
+                </span>
+              </div>
+            </div>
+            <div class="skeleton-line" style="height: 24px; width: 90%; margin: 12px 0;"></div>
+            <div class="skeleton-line" style="height: 16px; width: 100%;"></div>
+            <div class="skeleton-line" style="height: 16px; width: 70%; margin-top: 8px;"></div>
+          </div>
+        </div>
+      </ng-container>
 
+      <!-- Real Articles -->
       <div 
-        *ngFor="let article of filteredArticles" 
+        *ngFor="let article of articles; trackBy: trackById" 
         class="news-card"
         (click)="openArticle(article)">
         
-        <!-- Article Image (if exists) -->
         <div *ngIf="article.imageUrl" class="article-image">
-          <img [src]="article.imageUrl" title="artile" [alt]="article.title">
+          <img [src]="article.imageUrl" loading="lazy" [alt]="article.title" title="article">
           <div class="sentiment-badge" [ngClass]="getSentimentClass(article.sentiment)">
             {{ getSentimentIcon(article.sentiment) }}
           </div>
         </div>
 
-        <!-- Article Content -->
         <div class="article-content">
           <div class="article-header">
             <div class="source-info">
@@ -92,9 +118,9 @@
               <span class="article-time">{{ getTimeAgo(article.timestamp) }}</span>
             </div>
             <button 
+              title="Bookmark this article"
               class="bookmark-btn" 
               [class.bookmarked]="article.isBookmarked"
-              title="bookmark"
               (click)="$event.stopPropagation(); toggleBookmark(article)">
               <i [class]="article.isBookmarked ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
             </button>
@@ -103,7 +129,6 @@
           <h3 class="article-title">{{ article.title }}</h3>
           <p class="article-summary">{{ article.summary }}</p>
 
-          <!-- Related Symbols -->
           <div class="article-footer">
             <div class="related-symbols">
               <span 
@@ -115,13 +140,31 @@
             </div>
             <div class="article-meta">
               <span class="views">
-                <i class="fas fa-eye"></i> {{ article.views | number:'1.0-0' }}
+                Eye {{ article.views | number:'1.0-0' }}
+              </span>
+              <span class="views" *ngIf="article.likeCount">
+                Heart {{ article.likeCount }}
               </span>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
+      <!-- Loading more spinner -->
+      <div *ngIf="loadingMore" class="loading-more">
+        Spinner Loading more articles...
+      </div>
+
+      <!-- No more articles -->
+      <div *ngIf="!hasMore && articles.length > 0 && !loading" class="no-results">
+        <p>You've reached the end</p>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!loading && articles.length === 0" class="no-results">
+        Inbox No articles found
+        <p>Try changing filters or search query</p>
+      </div>
+    </div>
   </div>
 </div>

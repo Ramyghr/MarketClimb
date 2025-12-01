@@ -51,21 +51,37 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.accountService.userProfile$
       .pipe(takeUntil(this.destroy$))
       .subscribe(profile => {
-        this.userProfile = profile;
-        this.profileForm = { ...profile };
+        if (profile) {
+          this.userProfile = profile;
+          this.profileForm = { ...profile };
+        } else {
+          // Profile is null — keep previous values or initialize defaults if needed
+        }
       });
 
     this.accountService.securitySettings$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(settings => this.securitySettings = settings);
+      .subscribe(settings => {
+        if (settings) {
+          this.securitySettings = settings;
+        }
+      });
 
     this.accountService.notificationSettings$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(settings => this.notificationSettings = settings);
+      .subscribe(settings => {
+        if (settings) {
+          this.notificationSettings = settings;
+        }
+      });
 
     this.accountService.tradingPreferences$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(prefs => this.tradingPreferences = prefs);
+      .subscribe(prefs => {
+        if (prefs) {
+          this.tradingPreferences = prefs;
+        }
+      });
 
     this.accountService.connectedAccounts$
       .pipe(takeUntil(this.destroy$))

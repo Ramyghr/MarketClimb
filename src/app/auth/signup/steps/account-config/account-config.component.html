@@ -1,58 +1,190 @@
-<form [formGroup]="configForm" class="paper-kit-form">
-
-  <!-- Account Type Buttons -->
-  <div class="row mb-3">
-    <div class="col-md-12">
-      <label>Account Type</label>
-      <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
-        <label class="btn btn-primary" 
-               *ngFor="let type of accountTypes"
-               [class.active]="selectedAccountType === type"
-               (click)="selectedAccountType = type; configForm.get('accountType')?.setValue(type)">
-          <input type="radio" [value]="type" [checked]="selectedAccountType === type"> {{ type }}
-        </label>
-      </div>
-      <div class="form-control-feedback" *ngIf="configForm.get('accountType')?.invalid && configForm.get('accountType')?.touched">
-        Account Type is required
-      </div>
-    </div>
-  </div>
-
-  <!-- Base Currency Buttons -->
-  <div class="row mb-3">
-    <div class="col-md-12">
-      <label>Base Currency</label>
-      <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
-        <label class="btn btn-info" 
-               *ngFor="let c of currencies"
-               [class.active]="selectedCurrency === c"
-               (click)="selectedCurrency = c; configForm.get('baseCurrency')?.setValue(c)">
-          <input type="radio" [value]="c" [checked]="selectedCurrency === c"> {{ c }}
-        </label>
-      </div>
-      <div class="form-control-feedback" *ngIf="configForm.get('baseCurrency')?.invalid && configForm.get('baseCurrency')?.touched">
-        Base Currency is required
-      </div>
-    </div>
-  </div>
-
-  <!-- Leverage Slider -->
-  <div class="row mb-3">
-    <div class="col-md-12">
-      <label>Leverage: {{ leverageLabels[leverageValues.indexOf(selectedLeverage)] }}</label>
-      <input type="range" class="custom-range" title="range"
-             min="0" max="{{leverageValues.length - 1}}" 
-             [value]="leverageValues.indexOf(selectedLeverage)"
-             (input)="onLeverageChange($event)">
-      <div class="d-flex justify-content-between mt-1">
-        <span *ngFor="let l of leverageLabels">{{ l }}</span>
-      </div>
-      <div class="form-control-feedback" *ngIf="configForm.get('leverage')?.invalid && configForm.get('leverage')?.touched">
-        Leverage is required
-      </div>
-    </div>
-  </div>
-
+<form [formGroup]="configForm">
   
+  <!-- Username & Password Section -->
+  <div class="credentials-section mb-4">
+    <h5 class="text-primary mb-3">Account Credentials</h5>
+    
+    <div class="form-group">
+      <label for="username">Username *</label>
+      <input type="text" class="form-control" id="username" formControlName="username" placeholder="Choose a username">
+      <small class="form-text text-muted">3-20 characters, letters, numbers, and underscores only</small>
+      <div *ngIf="hasError('username', 'required')" class="text-danger">Username is required</div>
+      <div *ngIf="hasError('username', 'minlength')" class="text-danger">Username must be at least 3 characters</div>
+      <div *ngIf="hasError('username', 'pattern')" class="text-danger">Only letters, numbers, and underscores allowed</div>
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password *</label>
+      <div class="input-group">
+        <input [type]="showPassword ? 'text' : 'password'" class="form-control" id="password" formControlName="password" placeholder="Create a strong password">
+        <button type="button" title="Toggle password" class="btn btn-outline-secondary" (click)="togglePasswordVisibility()">
+          <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+        </button>
+      </div>
+      <small class="form-text text-muted">Min 8 characters, include uppercase, lowercase, and number</small>
+      <div *ngIf="hasError('password', 'required')" class="text-danger">Password is required</div>
+      <div *ngIf="hasError('password', 'minlength')" class="text-danger">Password must be at least 8 characters</div>
+      <div *ngIf="hasError('password', 'passwordStrength')" class="text-danger">Password must include uppercase, lowercase, and number</div>
+    </div>
+
+    <div class="form-group">
+      <label for="confirmPassword">Confirm Password *</label>
+      <div class="input-group">
+        <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword" formControlName="confirmPassword" placeholder="Re-enter password">
+        <button type="button" title="Toggle password" class="btn btn-outline-secondary" (click)="toggleConfirmPasswordVisibility()">
+          <i [class]="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+        </button>
+      </div>
+      <div *ngIf="hasError('confirmPassword', 'required')" class="text-danger">Please confirm your password</div>
+      <div *ngIf="hasFormError('passwordMismatch')" class="text-danger">Passwords do not match</div>
+    </div>
+  </div>
+
+  <!-- Profile Information (Optional) -->
+  <div class="profile-section mb-4">
+    <h5 class="text-primary mb-3">Profile Information (Optional)</h5>
+    
+    <div class="form-group">
+      <label for="display_name">Display Name</label>
+      <input type="text" class="form-control" id="display_name" formControlName="display_name" placeholder="How others will see you">
+    </div>
+
+    <div class="form-group">
+      <label for="bio">Bio</label>
+      <textarea class="form-control" id="bio" formControlName="bio" rows="3" placeholder="Tell us about yourself"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="website">Website</label>
+      <input type="url" class="form-control" id="website" formControlName="website" placeholder="https://your-website.com">
+      <div *ngIf="hasError('website', 'pattern')" class="text-danger">Please enter a valid URL</div>
+    </div>
+  </div>
+
+  <!-- Trading Configuration -->
+  <div class="trading-section mb-4">
+    <h5 class="text-primary mb-3">Trading Configuration</h5>
+    
+    <div class="form-group">
+      <label for="account_type">Account Type *</label>
+      <select class="form-control" id="account_type" formControlName="account_type">
+        <option value="">Select Account Type</option>
+        <option value="demo">Demo (Practice with virtual money)</option>
+        <option value="real">Real (Trade with real money)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="base_currency">Base Currency *</label>
+      <select class="form-control" id="base_currency" formControlName="base_currency">
+        <option value="">Select Base Currency</option>
+        <option value="USD">USD - US Dollar</option>
+        <option value="EUR">EUR - Euro</option>
+        <option value="GBP">GBP - British Pound</option>
+        <option value="TND">TND - Tunisian Dinar</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="leverage">Leverage: {{configForm.get('leverage')?.value}}x</label>
+      <input type="range" class="form-range" id="leverage" formControlName="leverage" min="1" max="500">
+      <div class="d-flex justify-content-between">
+        <small class="text-muted">Conservative (1x)</small>
+        <small class="text-muted">Aggressive (500x)</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Management (NEW) -->
+  <div class="risk-section mb-4">
+    <h5 class="text-primary mb-3">Risk Management</h5>
+    
+    <div class="form-check mb-3">
+      <input type="checkbox" class="form-check-input" id="confirm_orders" formControlName="confirm_orders">
+      <label class="form-check-label" for="confirm_orders">
+        Confirm all orders before execution
+      </label>
+    </div>
+
+    <div class="form-check mb-2">
+      <input type="checkbox" class="form-check-input" id="auto_stop_loss" formControlName="auto_stop_loss">
+      <label class="form-check-label" for="auto_stop_loss">
+        Enable Auto Stop Loss
+      </label>
+    </div>
+
+    <div *ngIf="configForm.get('auto_stop_loss')?.value" class="form-group ms-4">
+      <label for="stop_loss_percent">Stop Loss Percentage (1-20%)</label>
+      <input type="number" class="form-control" id="stop_loss_percent" formControlName="stop_loss_percent" min="1" max="20" step="0.5">
+      <small class="text-muted">Automatically close position if loss reaches this %</small>
+      <div *ngIf="hasError('stop_loss_percent', 'min')" class="text-danger">Minimum 1%</div>
+      <div *ngIf="hasError('stop_loss_percent', 'max')" class="text-danger">Maximum 20%</div>
+    </div>
+
+    <div class="form-check mb-2">
+      <input type="checkbox" class="form-check-input" id="auto_take_profit" formControlName="auto_take_profit">
+      <label class="form-check-label" for="auto_take_profit">
+        Enable Auto Take Profit
+      </label>
+    </div>
+
+    <div *ngIf="configForm.get('auto_take_profit')?.value" class="form-group ms-4">
+      <label for="take_profit_percent">Take Profit Percentage (5-50%)</label>
+      <input type="number" class="form-control" id="take_profit_percent" formControlName="take_profit_percent" min="5" max="50" step="0.5">
+      <small class="text-muted">Automatically close position if profit reaches this %</small>
+      <div *ngIf="hasError('take_profit_percent', 'min')" class="text-danger">Minimum 5%</div>
+      <div *ngIf="hasError('take_profit_percent', 'max')" class="text-danger">Maximum 50%</div>
+    </div>
+  </div>
+
+  <!-- Notification Preferences -->
+  <div class="notifications-section mb-4">
+    <h5 class="text-primary mb-3">Notification Preferences</h5>
+    
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="email_notifications" formControlName="email_notifications">
+      <label class="form-check-label" for="email_notifications">Email Notifications</label>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="push_notifications" formControlName="push_notifications">
+      <label class="form-check-label" for="push_notifications">Push Notifications</label>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="trade_alerts" formControlName="trade_alerts">
+      <label class="form-check-label" for="trade_alerts">Trade Execution Alerts</label>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="price_alerts" formControlName="price_alerts">
+      <label class="form-check-label" for="price_alerts">Price Alerts</label>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="news_alerts" formControlName="news_alerts">
+      <label class="form-check-label" for="news_alerts">Market News Alerts</label>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="social_updates" formControlName="social_updates">
+      <label class="form-check-label" for="social_updates">Social Updates</label>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="weekly_report" formControlName="weekly_report">
+      <label class="form-check-label" for="weekly_report">Weekly Performance Report</label>
+    </div>
+  </div>
+
+  <!-- Navigation Buttons -->
+  <div class="d-flex justify-content-between mt-4">
+    <button type="button" class="btn btn-secondary" (click)="submitStep()" disabled>
+      <i class="fas fa-arrow-left"></i> Previous
+    </button>
+    <button type="button" class="btn btn-primary" (click)="submitStep()">
+      Next <i class="fas fa-arrow-right"></i>
+    </button>
+  </div>
 
 </form>

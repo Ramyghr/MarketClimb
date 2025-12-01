@@ -1,7 +1,10 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 interface NewsArticle {
-  id: string;
+  id: string | number;
   title: string;
   source: string;
   sourceIcon: string;
@@ -14,6 +17,15 @@ interface NewsArticle {
   url: string;
   isBookmarked: boolean;
   views: number;
+  likeCount?: number;
+}
+
+interface ApiResponse {
+  items: any[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
 }
 
 @Component({
@@ -26,110 +38,41 @@ export class NewsComponent implements OnInit {
   @Output() symbolClicked = new EventEmitter<string>();
 
   isVisible = false;
-  activeFilter = 'all';
-  searchQuery = '';
+  loading = false;
+  loadingMore = false;
+  hasMore = true;
+  isRefreshing = false;
+
+  activeFilter: 'all' | 'trending' | 'bookmarked' = 'all';
   selectedCategory = 'all';
+  searchQuery = '';
+  private searchSubject = new Subject<string>();
 
   categories = ['all', 'markets', 'stocks', 'crypto', 'forex', 'commodities', 'economics'];
 
-  newsArticles: NewsArticle[] = [
-    {
-      id: '1',
-      title: 'Federal Reserve Signals Potential Rate Cut in Q4 Amid Cooling Inflation',
-      source: 'Reuters',
-      sourceIcon: '📰',
-      timestamp: new Date(Date.now() - 30 * 60000),
-      summary: 'The Federal Reserve indicated a potential shift in monetary policy as inflation shows signs of cooling. Market analysts expect a 25 basis point cut...',
-      imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=250&fit=crop',
-      relatedSymbols: ['SPY', 'QQQ', 'DIA'],
-      sentiment: 'positive',
-      category: 'economics',
-      url: '#',
-      isBookmarked: false,
-      views: 12543
-    },
-    {
-      id: '2',
-      title: 'Tech Giants Rally as AI Spending Shows No Signs of Slowing Down',
-      source: 'Bloomberg',
-      sourceIcon: '📊',
-      timestamp: new Date(Date.now() - 90 * 60000),
-      summary: 'Major technology companies continue to invest heavily in artificial intelligence infrastructure, driving stock prices higher across the sector...',
-      imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=250&fit=crop',
-      relatedSymbols: ['AAPL', 'MSFT', 'NVDA', 'GOOGL'],
-      sentiment: 'positive',
-      category: 'stocks',
-      url: '#',
-      isBookmarked: true,
-      views: 8932
-    },
-    {
-      id: '3',
-      title: 'Oil Prices Surge 5% on Middle East Supply Concerns',
-      source: 'CNBC',
-      sourceIcon: '📈',
-      timestamp: new Date(Date.now() - 120 * 60000),
-      summary: 'Crude oil futures jumped sharply in early trading as geopolitical tensions in the Middle East raise concerns about potential supply disruptions...',
-      relatedSymbols: ['USO', 'XLE'],
-      sentiment: 'negative',
-      category: 'commodities',
-      url: '#',
-      isBookmarked: false,
-      views: 15221
-    },
-    {
-      id: '4',
-      title: 'Bitcoin Breaks $65,000 as Institutional Adoption Accelerates',
-      source: 'CoinDesk',
-      sourceIcon: '₿',
-      timestamp: new Date(Date.now() - 180 * 60000),
-      summary: 'Bitcoin surged past $65,000 for the first time in six months, driven by renewed institutional interest and the approval of several spot Bitcoin ETFs...',
-      imageUrl: 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=250&fit=crop',
-      relatedSymbols: ['BTC', 'ETH'],
-      sentiment: 'positive',
-      category: 'crypto',
-      url: '#',
-      isBookmarked: false,
-      views: 22156
-    },
-    {
-      id: '5',
-      title: 'European Markets Close Lower on Recession Fears',
-      source: 'Financial Times',
-      sourceIcon: '🌍',
-      timestamp: new Date(Date.now() - 240 * 60000),
-      summary: 'European stock indices ended the session in negative territory as weak manufacturing data fueled concerns about an economic slowdown across the region...',
-      relatedSymbols: ['EWG', 'EWU', 'EWI'],
-      sentiment: 'negative',
-      category: 'markets',
-      url: '#',
-      isBookmarked: false,
-      views: 6843
-    },
-    {
-      id: '6',
-      title: 'Dollar Weakens Against Major Currencies on Fed Dovish Comments',
-      source: 'Wall Street Journal',
-      sourceIcon: '💱',
-      timestamp: new Date(Date.now() - 300 * 60000),
-      summary: 'The U.S. dollar fell to a three-month low against a basket of major currencies following dovish remarks from Federal Reserve officials...',
-      relatedSymbols: ['DXY', 'EUR/USD', 'GBP/USD'],
-      sentiment: 'negative',
-      category: 'forex',
-      url: '#',
-      isBookmarked: true,
-      views: 4521
-    }
-  ];
+  articles: NewsArticle[] = [];
+  page = 0;
+  size = 15;
 
-  filteredArticles: NewsArticle[] = [];
+  constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    this.filterArticles();
+    this.setupSearchDebounce();
+  }
+
+  private setupSearchDebounce() {
+    this.searchSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.searchQuery = query.trim();
+      this.resetAndLoad();
+    });
   }
 
   show() {
     this.isVisible = true;
+    if (this.articles.length === 0) this.resetAndLoad();
   }
 
   hide() {
@@ -137,51 +80,127 @@ export class NewsComponent implements OnInit {
     this.closeOverlay.emit();
   }
 
-  filterArticles() {
-    let articles = this.newsArticles;
+  // Bouton Refresh
+  refreshNews() {
+    if (this.isRefreshing) return;
+    this.isRefreshing = true;
 
-    // Filter by category
-    if (this.selectedCategory !== 'all') {
-      articles = articles.filter(a => a.category === this.selectedCategory);
-    }
-
-    // Filter by search query
-    if (this.searchQuery.trim()) {
-      const query = this.searchQuery.toLowerCase();
-      articles = articles.filter(a => 
-        a.title.toLowerCase().includes(query) ||
-        a.summary.toLowerCase().includes(query) ||
-        a.relatedSymbols.some(s => s.toLowerCase().includes(query))
-      );
-    }
-
-    // Filter by active filter
-    if (this.activeFilter === 'bookmarked') {
-      articles = articles.filter(a => a.isBookmarked);
-    } else if (this.activeFilter === 'trending') {
-      articles = articles.sort((a, b) => b.views - a.views);
-    }
-
-    this.filteredArticles = articles;
+    this.http.post(`${environment.apiUrl}/news/refresh`, {}).subscribe({
+      next: () => {
+        this.resetAndLoad(); // Recharge tout de suite
+      },
+      error: (err) => {
+        console.error('Refresh failed:', err);
+      },
+      complete: () => {
+        setTimeout(() => this.isRefreshing = false, 1000);
+      }
+    });
   }
 
-  setFilter(filter: string) {
+  private resetAndLoad() {
+    this.page = 0;
+    this.articles = [];
+    this.hasMore = true;
+    this.loadArticles();
+  }
+
+  loadArticles(append = false) {
+    if ((this.loading || this.loadingMore) && !append) return;
+    if (!this.hasMore && append) return;
+
+    this.loading = !append;
+    this.loadingMore = append;
+
+    let params = new HttpParams()
+      .set('page', this.page.toString())
+      .set('size', this.size.toString())
+      .set('sort_by', this.activeFilter === 'trending' ? 'like_count' : 'published_at');
+
+    if (this.selectedCategory !== 'all') {
+      params = params.set('category', this.selectedCategory);
+    }
+    if (this.searchQuery) {
+      params = params.set('q', this.searchQuery);
+    }
+
+    this.http.get<ApiResponse>(`${environment.apiUrl}/news/`, { params }).subscribe({
+      next: (res) => {
+        const newArticles: NewsArticle[] = (res.items || []).map((a: any) => ({
+          id: a.id,
+          title: a.title || 'Untitled',
+          source: a.source || 'Unknown Source',
+          sourceIcon: this.getSourceIcon(a.source || ''),
+          timestamp: new Date(a.published_at),
+          summary: a.summary || a.content?.slice(0, 180) + '...' || 'No summary available.',
+          imageUrl: a.url_to_image || '',
+          relatedSymbols: a.symbol ? [a.symbol] : [],
+          sentiment: (a.sentiment || 'neutral').toLowerCase() as 'positive' | 'negative' | 'neutral',
+          category: this.mapTopicToCategory(a.topics || 'general'),
+          url: a.url || '#',
+          isBookmarked: !!a.liked,
+          views: a.view_count || Math.floor(Math.random() * 40000) + 5000,
+          likeCount: a.like_count || 0
+        }));
+
+        this.articles = append ? [...this.articles, ...newArticles] : newArticles;
+        this.hasMore = this.articles.length < res.total;
+        this.page++;
+      },
+      error: (err) => {
+        console.error('Failed to load news:', err);
+        this.hasMore = false;
+      },
+      complete: () => {
+        this.loading = false;
+        this.loadingMore = false;
+      }
+    });
+  }
+
+  // Infinite scroll
+  onScroll() {
+    const feed = document.querySelector('.news-feed') as HTMLElement;
+    if (!feed) return;
+
+    const trigger = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 800;
+    if (trigger && !this.loadingMore && this.hasMore) {
+      this.loadArticles(true);
+    }
+  }
+
+  setFilter(filter: 'all' | 'trending' | 'bookmarked') {
     this.activeFilter = filter;
-    this.filterArticles();
+    this.resetAndLoad();
   }
 
   setCategory(category: string) {
     this.selectedCategory = category;
-    this.filterArticles();
+    this.resetAndLoad();
   }
 
-  onSearchChange() {
-    this.filterArticles();
+  onSearchInput(value: string) {
+    this.searchSubject.next(value);
   }
 
   toggleBookmark(article: NewsArticle) {
-    article.isBookmarked = !article.isBookmarked;
-    // Here you would typically call a service to persist this
+    const previous = article.isBookmarked;
+    article.isBookmarked = !previous;
+
+    this.http.post(`${environment.apiUrl}/news/${article.id}/like`, {}).subscribe({
+      error: () => {
+        article.isBookmarked = previous; // revert
+      }
+    });
+  }
+
+  // Helpers
+  private getSourceIcon(source: string): string {
+    const map: Record<string, string> = {
+      'CoinDesk': 'B', 'Bloomberg': 'B', 'Reuters': 'R', 'CNBC': 'C',
+      'Financial Times': 'FT', 'Wall Street Journal': 'WSJ'
+    };
+    return map[source] || source.charAt(0).toUpperCase() || 'N';
   }
 
   getSentimentClass(sentiment: string): string {
@@ -189,16 +208,25 @@ export class NewsComponent implements OnInit {
   }
 
   getSentimentIcon(sentiment: string): string {
-    switch(sentiment) {
-      case 'positive': return '📈';
-      case 'negative': return '📉';
-      default: return '➖';
+    switch (sentiment) {
+      case 'positive': return 'Up';
+      case 'negative': return 'Down';
+      default: return 'Neutral';
     }
   }
 
+  private mapTopicToCategory(topics: string): string {
+    const lower = (topics || '').toLowerCase();
+    if (lower.includes('crypto') || lower.includes('bitcoin')) return 'crypto';
+    if (lower.includes('stock') || lower.includes('earnings')) return 'stocks';
+    if (lower.includes('fed') || lower.includes('inflation')) return 'economics';
+    if (lower.includes('oil') || lower.includes('gold')) return 'commodities';
+    if (lower.includes('eur') || lower.includes('usd')) return 'forex';
+    return 'markets';
+  }
+
   getTimeAgo(date: Date): string {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-    
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
     if (seconds < 60) return 'Just now';
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -212,7 +240,10 @@ export class NewsComponent implements OnInit {
 
   openArticle(article: NewsArticle) {
     article.views++;
-    window.open(article.url, '_blank');
+    if (article.url && article.url !== '#') {
+      window.open(article.url, '_blank');
+    }
   }
-  
+
+  trackById = (index: number, article: NewsArticle): any => article.id;
 }

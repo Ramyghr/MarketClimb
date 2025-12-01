@@ -338,3 +338,62 @@
     min-width: unset;
   }
 }
+.popular-symbols-panel {
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header h3 { margin: 0 0 12px 0; font-size: 16px; }
+
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 6px 12px;
+  background: #16213e;
+  border: none;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tab-btn.active, .tab-btn:hover {
+  background: #0891b2;
+  color: white;
+}
+
+.popular-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.popular-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+}
+
+.popular-item:hover, .popular-item.active {
+  background: #1e3a5f;
+}
+
+.symbol { font-weight: bold; color: #00c896; }
+.name { font-size: 12px; color: #94a3b8; margin-left: 8px; }
+.price { font-weight: bold; }
+.change.positive { color: #10b981; }
+.change.negative { color: #ef4444; }

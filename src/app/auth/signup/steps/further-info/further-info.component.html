@@ -1,48 +1,16 @@
-<div class="further-info-container">
+<!-- further-info.component.html -->
+<form [formGroup]="furtherForm">
+  <input type="text" class="form-control" formControlName="address" placeholder="Address">
+  <input type="tel" class="form-control" formControlName="phone" placeholder="Phone">
+  <select class="form-control" title="country" formControlName="country">
+    <option value="">Select Country</option>
+    <option *ngFor="let c of ['US','UK','FR','DE','TN']" [value]="c">{{c}}</option>
+  </select>
 
-  <form [formGroup]="furtherForm" (ngSubmit)="submitStep()">
+  <label class="btn btn-outline-primary">
+    Upload ID Document
+    <input type="file" hidden (change)="onIDSelected($event)">
+  </label>
 
-    <!-- Country Select -->
-    <div class="form-group">
-      <select class="form-control" formControlName="country" aria-label="Country" title="Country">
-        <option value="" disabled selected>Select your country</option>
-        <option *ngFor="let c of countries" [value]="c">{{ c }}</option>
-      </select>
-    </div>
-
-    <!-- Phone Input with +info -->
-    <div class="form-group input-group">
-      <div class="input-group-prepend">
-        <span class="input-group-text">+</span>
-      </div>
-      <input type="tel" class="form-control" placeholder="Phone" formControlName="phone">
-      <div class="input-group-append">
-        <span class="input-group-text text-muted">e.g., 1234567890</span>
-      </div>
-    </div>
-
-    <!-- Address Input with Map Preview -->
-    <div class="form-group">
-      <input type="text" class="form-control" placeholder="Address" formControlName="address" (input)="updateMap()">
-    </div>
-
-    <div class="map-preview mb-3" *ngIf="addressMap">
-      <img [src]="addressMap" alt="Map Preview">
-    </div>
-
-    <!-- ID Upload -->
-    <div class="id-upload mt-3 text-center">
-      <label class="btn btn-outline-primary">
-        Upload ID Document
-        <input type="file" (change)="onIDSelected($event)" hidden>
-      </label>
-
-      <div class="id-preview mt-2" *ngIf="idPreview">
-        <img [src]="idPreview|| 'src\assets\img\id_exemple.jpg'" alt="ID Preview">
-      </div>
-    </div>
-
-    
-
-  </form>
-</div>
+  <img *ngIf="idPreview" [src]="idPreview" alt="ID Preview" class="img-thumbnail mt-2">
+</form>

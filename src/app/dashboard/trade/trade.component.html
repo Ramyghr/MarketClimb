@@ -1,26 +1,41 @@
 <div class="trade-container">
 
-  <!-- Market Info Bar -->
+ 
+
+  <!-- ==================== MARKET INFO BAR (PRO) ==================== -->
   <div class="market-info-bar">
     <div class="symbol-info">
       <h2 class="symbol-name">{{ selectedSymbol }}</h2>
-      <span class="symbol-exchange">Live Trading</span>
+      <div class="live-badge">
+        <span class="dot"></span>
+        <span class="live-text">LIVE</span>
+        <span class="last-update" *ngIf="lastUpdated">
+          {{ lastUpdated | date:'HH:mm:ss' }}
+        </span>
+      </div>
     </div>
+
     <div class="price-info">
-      <span class="current-price">${{ currentPrice | number:'1.2-2' }}</span>
-      <span class="price-change" [ngClass]="{'positive': priceChange >= 0, 'negative': priceChange < 0}">
-        <i [class]="priceChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-        {{ priceChange | number:'1.2-2' }} ({{ priceChangePercent | number:'1.2-2' }}%)
-      </span>
+      <div class="current-price">${{ currentPrice | number:'1.2-8' }}</div>
+      <div class="price-change" [ngClass]="getChangeClass()">
+        <i [class]="priceChange >= 0 ? 'fas fa-caret-up' : 'fas fa-caret-down'"></i>
+        <span class="amount">{{ priceChange >= 0 ? '+' : '' }}{{ priceChange | number:'1.2-8' }}</span>
+        <span class="percent">({{ priceChangePercent >= 0 ? '+' : '' }}{{ priceChangePercent | number:'1.2-2' }}%)</span>
+      </div>
     </div>
+
     <div class="market-stats">
       <div class="stat-item">
+        <span class="stat-label">Open</span>
+        <span class="stat-value">${{ open | number:'1.2-8' }}</span>
+      </div>
+      <div class="stat-item">
         <span class="stat-label">High</span>
-        <span class="stat-value">${{ high | number:'1.2-2' }}</span>
+        <span class="stat-value positive">${{ high | number:'1.2-8' }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Low</span>
-        <span class="stat-value">${{ low | number:'1.2-2' }}</span>
+        <span class="stat-value negative">${{ low | number:'1.2-8' }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Volume</span>
@@ -29,7 +44,7 @@
     </div>
   </div>
 
-  <!-- Main Section: Chart + Watchlist -->
+  <!-- ==================== MAIN SECTION: Chart + Watchlist ==================== -->
   <div class="main-section">
     <div class="chart-column">
       <div class="chart-wrapper">
@@ -47,7 +62,7 @@
     </div>
   </div>
 
-  <!-- Trading Panels Grid -->
+  <!-- ==================== TRADING PANELS GRID ==================== -->
   <div class="trading-panels">
     <!-- Left Column: Order Panel -->
     <div class="panel-column left-column">

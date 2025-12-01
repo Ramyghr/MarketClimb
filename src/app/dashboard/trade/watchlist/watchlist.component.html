@@ -1,15 +1,537 @@
 <div class="watchlist-card">
-  <h4 class="watchlist-title">Watchlist</h4>
-  <div class="watchlist-items">
-    <div *ngFor="let item of marketData" 
-         class="watchlist-item" 
-         (click)="selectSymbol(item.symbol)">
-      <span class="watchlist-symbol">{{ item.symbol }}</span>
-      <span class="watchlist-price">${{ item.price | number:'1.2-2' }}</span>
-      <span class="watchlist-change" 
-            [ngClass]="{'positive': item.change >= 0, 'negative': item.change < 0}">
-        {{ item.change | number:'1.2-2' }}
-      </span>
+  <!-- Header with Watchlist Selector -->
+  <div class="watchlist-header">
+    <div class="watchlist-selector">
+      <select 
+      title="watch"
+        *ngIf="watchlists.length > 0" 
+        class="watchlist-select"
+        [(ngModel)]="selectedWatchlist"
+        (change)="selectWatchlist(selectedWatchlist!)">
+        <option *ngFor="let wl of watchlists" [ngValue]="wl">
+          {{ wl.name }} ({{ wl.items?.length || 0 }})
+        </option>
+      </select>
+      <h4 *ngIf="watchlists.length === 0" class="watchlist-title">Watchlist</h4>
+    </div>
+    
+    <div class="watchlist-actions">
+      <button 
+        class="btn-icon" 
+        (click)="openAddSymbolModal()"
+        title="Add Symbol"
+        [disabled]="!selectedWatchlist">
+        ➕
+      </button>
+      <button 
+        class="btn-icon" 
+        (click)="openCreateModal()"
+        title="Create Watchlist">
+        📋
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="watchlist-loading">
+    <div class="spinner"></div>
+    <p>Loading watchlists...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && watchlists.length === 0" class="watchlist-empty">
+    <p>No watchlists yet</p>
+    <button class="btn-primary" (click)="openCreateModal()">
+      Create Your First Watchlist
+    </button>
+  </div>
+
+  <!-- Watchlist Items -->
+  <div *ngIf="!loading && marketData.length > 0" class="watchlist-items">
+    <div 
+      *ngFor="let item of marketData" 
+      class="watchlist-item" 
+      (click)="selectSymbol(item.symbol)">
+      <div class="item-info">
+        <span class="watchlist-symbol">{{ item.symbol }}</span>
+        <span class="watchlist-volume">Vol: {{ item.volume | number }}</span>
+      </div>
+      <div class="item-price">
+        <span class="watchlist-price">${{ item.price | number:'1.2-2' }}</span>
+        <span 
+          class="watchlist-change" 
+          [ngClass]="getChangeClass(item.change)">
+          {{ item.change | number:'1.2-2' }} ({{ formatPercent(item.changePercent) }})
+        </span>
+      </div>
+      <button 
+        class="btn-remove" 
+        (click)="removeSymbol(item.symbol, $event)"
+        title="Remove">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty Watchlist State -->
+  <div *ngIf="!loading && selectedWatchlist && marketData.length === 0" class="watchlist-empty">
+    <p>This watchlist is empty</p>
+    <button class="btn-secondary" (click)="openAddSymbolModal()">
+      Add Symbols
+    </button>
+  </div>
+</div>
+
+<!-- Create Watchlist Modal -->
+<div *ngIf="showCreateModal" class="modal-overlay" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Create New Watchlist</h3>
+      <button class="btn-close" (click)="closeCreateModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Watchlist Name</label>
+        <input 
+          type="text" 
+          class="form-input"
+          [(ngModel)]="newWatchlistName"
+          placeholder="e.g., Tech Stocks"
+          (keyup.enter)="createWatchlist()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeCreateModal()">Cancel</button>
+      <button 
+        class="btn-primary" 
+        (click)="createWatchlist()"
+        [disabled]="!newWatchlistName.trim()">
+        Create
+      </button>
     </div>
   </div>
 </div>
+
+<!-- Add Symbol Modal -->
+<div *ngIf="showAddSymbolModal" class="modal-overlay" (click)="closeAddSymbolModal()">
+  <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add Symbol to Watchlist</h3>
+      <button class="btn-close" (click)="closeAddSymbolModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Search Symbol</label>
+        <input 
+          type="text" 
+          class="form-input"
+          [(ngModel)]="searchQuery"
+          (input)="searchSymbols()"
+          placeholder="Search stocks, crypto, forex...">
+      </div>
+
+      <!-- Search Results -->
+      <div *ngIf="searchResults.length > 0" class="search-results">
+        <div 
+          *ngFor="let result of searchResults" 
+          class="search-result-item"
+          (click)="addSymbol(result.symbol)">
+          <div class="result-info">
+            <span class="result-symbol">{{ result.symbol }}</span>
+            <span class="result-name">{{ result.name }}</span>
+          </div>
+          <span class="result-type">{{ result.type }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Add Common Symbols -->
+      <div class="quick-add-section">
+        <h4>Popular Symbols</h4>
+        <div class="quick-add-buttons">
+          <button 
+            class="btn-chip" 
+            *ngFor="let sym of ['BTC', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'BTCUSDT', 'ETHUSDT']"
+            (click)="addSymbol(sym)">
+            {{ sym }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Enhanced Styles */
+.watchlist-card {
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--text-primary, #fff);
+}
+
+.watchlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.watchlist-selector {
+  flex: 1;
+}
+
+.watchlist-select {
+  background: var(--input-bg, #16213e);
+  border: 1px solid var(--border-color, #2d3748);
+  color: var(--text-primary, #fff);
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 250px;
+  cursor: pointer;
+}
+
+.watchlist-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-color, #2d3748);
+  color: var(--text-primary, #fff);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--primary-color, #0891b2);
+  border-color: var(--primary-color, #0891b2);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.watchlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--item-bg, #16213e);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.watchlist-item:hover {
+  background: var(--item-hover-bg, #1e3a5f);
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.watchlist-symbol {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.watchlist-volume {
+  font-size: 11px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.item-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin-right: 32px;
+}
+
+.watchlist-price {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.watchlist-change {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.watchlist-change.positive {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.watchlist-change.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-remove {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.watchlist-item:hover .btn-remove {
+  opacity: 1;
+}
+
+.btn-remove:hover {
+  color: #ef4444;
+}
+
+.watchlist-loading,
+.watchlist-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color, #2d3748);
+  border-top-color: var(--primary-color, #0891b2);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-lg {
+  max-width: 600px;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color, #2d3748);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.btn-close:hover {
+  color: var(--text-primary, #fff);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid var(--border-color, #2d3748);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--input-bg, #16213e);
+  border: 1px solid var(--border-color, #2d3748);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #0891b2);
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary-color, #0891b2);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover, #0e7490);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--secondary-bg, #374151);
+  color: var(--text-primary, #fff);
+}
+
+.btn-secondary:hover {
+  background: var(--secondary-hover, #4b5563);
+}
+
+.search-results {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+}
+
+.search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background: var(--item-hover-bg, #1e3a5f);
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-symbol {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.result-name {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.result-type {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: var(--tag-bg, #374151);
+  border-radius: 4px;
+}
+
+.quick-add-section {
+  margin-top: 24px;
+}
+
+.quick-add-section h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.quick-add-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-chip {
+  padding: 6px 12px;
+  background: var(--chip-bg, #374151);
+  border: 1px solid var(--border-color, #2d3748);
+  border-radius: 16px;
+  color: var(--text-primary, #fff);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-chip:hover {
+  background: var(--primary-color, #0891b2);
+  border-color: var(--primary-color, #0891b2);
+}
+</style>

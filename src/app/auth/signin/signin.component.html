@@ -1,72 +1,72 @@
-<div class="wrapper">
-  <div class="page-header" style="background-image: url('/assets/img/login-image.jpg');">
-    <div class="filter"></div>
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-4 col-sm-6 mr-auto ml-auto">
-          <div class="card card-login">
-            <h3 class="title text-center">Welcome </h3>
+  <div class="wrapper">
+    <div class="page-header" style="background-image: url('/assets/img/login-image.jpg');">
+      <div class="filter"></div>
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 col-sm-6 mr-auto ml-auto">
+            <div class="card card-login">
+              <h3 class="title text-center">Welcome </h3>
 
-            <!-- Social buttons -->
-      <div class="social-line text-center mb-4">
-  <a href="#" class="btn btn-facebook btn-just-icon">
-    <i class="fa-brands fa-facebook-f"></i>
-  </a>
-  <a href="#" class="btn btn-google btn-just-icon">
-    <i class="fa-brands fa-google-plus-g"></i>
-  </a>
-  <a href="#" class="btn btn-twitter btn-just-icon">
-    <i class="fa-brands fa-x-twitter"></i>
-  </a>
-</div>
+              <!-- Social buttons -->
+        <div class="social-line text-center mb-4">
+    <a href="#" class="btn btn-facebook btn-just-icon">
+      <i class="fa-brands fa-facebook-f"></i>
+    </a>
+    <a href="#" class="btn btn-google btn-just-icon">
+      <i class="fa-brands fa-google-plus-g"></i>
+    </a>
+    <a href="#" class="btn btn-twitter btn-just-icon">
+      <i class="fa-brands fa-x-twitter"></i>
+    </a>
+  </div>
 
 
 
-            <!-- Reactive form -->
-            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-              <div class="input-group form-group-no-border" [ngClass]="{'input-group-focus': loginForm.get('email')?.touched}">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">
-                    <i class="nc-icon nc-email-85"></i>
-                  </span>
+              <!-- Reactive form -->
+              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+                <div class="input-group form-group-no-border" [ngClass]="{'input-group-focus': loginForm.get('email')?.touched}">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">
+                      <i class="nc-icon nc-email-85"></i>
+                    </span>
+                  </div>
+                  <input type="email" class="form-control" placeholder="Email" formControlName="email">
                 </div>
-                <input type="email" class="form-control" placeholder="Email" formControlName="email">
-              </div>
-              <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="text-danger mb-2">
-                Valid email is required
-              </div>
-
-              <div class="input-group form-group-no-border" [ngClass]="{'input-group-focus': loginForm.get('password')?.touched}">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">
-                    <i class="nc-icon nc-key-25"></i>
-                  </span>
+                <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="text-danger mb-2">
+                  Valid email is required
                 </div>
-                <input type="password" class="form-control" placeholder="Password" formControlName="password">
-              </div>
-              <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="text-danger mb-3">
-                Password is required
+
+                <div class="input-group form-group-no-border" [ngClass]="{'input-group-focus': loginForm.get('password')?.touched}">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">
+                      <i class="nc-icon nc-key-25"></i>
+                    </span>
+                  </div>
+                  <input type="password" class="form-control" placeholder="Password" formControlName="password">
+                </div>
+                <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="text-danger mb-3">
+                  Password is required
+                </div>
+
+                <button class="btn btn-danger btn-block btn-round">Sign In</button>
+              </form>
+
+              
+              <div class="forgot text-center mt-2">
+              <a routerLink="/forgot-password">Forgot password?</a>
               </div>
 
-              <button class="btn btn-danger btn-block btn-round">Sign In</button>
-            </form>
-
-            
-             <div class="forgot text-center mt-2">
-            <a routerLink="/forgot-password">Forgot password?</a>
+  <!-- Add this if you want a signup link -->
+  <div class="text-center mt-2">
+    Don't have an account? <a routerLink="/signup">Sign Up</a>
+  </div>
             </div>
-
-<!-- Add this if you want a signup link -->
-<div class="text-center mt-2">
-  Don't have an account? <a routerLink="/signup">Sign Up</a>
-</div>
           </div>
         </div>
-      </div>
 
-      <footer class="footer register-footer text-center mt-3">
-        &copy; {{ currentYear }}. MaketClimb <i class="fa fa-heart heart"></i>
-      </footer>
+        <footer class="footer register-footer text-center mt-3">
+          &copy; {{ currentYear }}. MaketClimb <i class="fa fa-heart heart"></i>
+        </footer>
+      </div>
     </div>
   </div>
-</div>

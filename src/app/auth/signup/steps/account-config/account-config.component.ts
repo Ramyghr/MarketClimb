@@ -1,5 +1,5 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 
 @Component({
   selector: 'app-account-config',
@@ -7,41 +7,98 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   styleUrls: ['./account-config.component.css']
 })
 export class AccountConfigComponent implements OnInit {
-  configForm: FormGroup;
+  @Output() stepCompleted = new EventEmitter<any>();  // ← Changed from 'next'
 
-  @Output() stepCompleted = new EventEmitter<any>();
+  configForm!: FormGroup;
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
 
-  accountTypes = ['Standard', 'ECN', 'Pro'];
-currencies = ['USD', 'EUR', 'GBP', 'JPY'];
-leverageValues = [10, 50, 100, 200]; // For slider
-leverageLabels = ['1:10', '1:50', '1:100', '1:200'];
-selectedLeverage = 50; // default
-selectedAccountType = 'Standard';
-selectedCurrency = 'USD';
-
-
-  constructor(private fb: FormBuilder) {
-    this.configForm = this.fb.group({
-      accountType: ['', Validators.required],
-      baseCurrency: ['', Validators.required],
-      leverage: ['', Validators.required]
+  ngOnInit(): void {
+    this.configForm = new FormGroup({
+      // Account credentials (REQUIRED)
+      username: new FormControl('', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(20),
+        Validators.pattern(/^[a-zA-Z0-9_]+$/)
+      ]),
+      password: new FormControl('', [
+        Validators.required,
+        Validators.minLength(8),
+        this.passwordStrengthValidator
+      ]),
+      confirmPassword: new FormControl('', [Validators.required]),
+      
+      // Optional profile info
+      display_name: new FormControl(''),
+      bio: new FormControl(''),
+      website: new FormControl('', [Validators.pattern(/^https?:\/\/.+/)]),
+      
+      // Trading preferences
+      account_type: new FormControl('demo', [Validators.required]),
+      base_currency: new FormControl('USD', [Validators.required]),
+      leverage: new FormControl(50, [Validators.required, Validators.min(1), Validators.max(500)]),
+      
+      // Stop Loss & Take Profit (NEW - backend validates these)
+      auto_stop_loss: new FormControl(false),
+      stop_loss_percent: new FormControl(5.0, [Validators.min(1), Validators.max(20)]),
+      auto_take_profit: new FormControl(false),
+      take_profit_percent: new FormControl(10.0, [Validators.min(5), Validators.max(50)]),
+      confirm_orders: new FormControl(true),
+      
+      // Notification preferences
+      email_notifications: new FormControl(true),
+      push_notifications: new FormControl(true),
+      trade_alerts: new FormControl(true),
+      price_alerts: new FormControl(true),
+      news_alerts: new FormControl(true),
+      social_updates: new FormControl(true),
+      weekly_report: new FormControl(true)
+    }, {
+      validators: this.passwordMatchValidator
     });
   }
 
-  ngOnInit(): void {}
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password');
+    const confirmPassword = control.get('confirmPassword');
+    if (!password || !confirmPassword) return null;
+    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
+  }
 
-  submitStep() {
+  passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value) return null;
+    const hasUpperCase = /[A-Z]/.test(value);
+    const hasLowerCase = /[a-z]/.test(value);
+    const hasNumeric = /[0-9]/.test(value);
+    return (hasUpperCase && hasLowerCase && hasNumeric) ? null : { passwordStrength: true };
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  submitStep(): void {  // ← Changed method name to match
     if (this.configForm.valid) {
-      this.stepCompleted.emit(this.configForm.value);
+      const formValue = { ...this.configForm.value };
+      delete formValue.confirmPassword; // Don't send confirmPassword to backend
+      this.stepCompleted.emit(formValue);
     } else {
       this.configForm.markAllAsTouched();
     }
   }
-  onLeverageChange(event: Event) {
-  const input = event.target as HTMLInputElement; // cast properly
-  const value = Number(input.value);
-  this.selectedLeverage = this.leverageValues[value];
-  this.configForm.get('leverage')?.setValue(this.selectedLeverage);
+
+  hasError(controlName: string, errorName: string): boolean {
+    const control = this.configForm.get(controlName);
+    return !!(control && control.hasError(errorName) && (control.dirty || control.touched));
   }
 
+  hasFormError(errorName: string): boolean {
+    return !!(this.configForm.hasError(errorName) && this.configForm.get('confirmPassword')?.touched);
+  }
 }

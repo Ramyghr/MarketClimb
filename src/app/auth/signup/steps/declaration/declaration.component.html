@@ -3,7 +3,7 @@
   <!-- Risk Disclosure -->
   <div class="form-check mb-2">
     <label class="form-check-label">
-      <input type="checkbox" class="form-check-input" formControlName="riskAcknowledged">
+      <input type="checkbox" class="form-check-input" formControlName="riskAcknowledged" id="riskAck">
       I acknowledge the risks involved in trading
       <span class="form-control-feedback text-danger" *ngIf="declarationForm.get('riskAcknowledged')?.invalid && declarationForm.get('riskAcknowledged')?.touched">
         You must acknowledge the risks
@@ -14,9 +14,9 @@
   <!-- Terms & Conditions -->
   <div class="form-check mb-3">
     <label class="form-check-label">
-      <input type="checkbox" class="form-check-input" formControlName="termsAccepted">
+      <input type="checkbox" class="form-check-input" formControlName="termsAccepted" id="termsAcc">
       I agree to the Terms & Conditions
-      <span class="form-control-feedback text-danger" *ngIf="declarationForm.get('termsAccepted')?.invalid && declarationForm.get('termsAccepted')?.touched">
+      <span class="form-control-feedback text-danger" *ngIf="declarationForm.get('termsAccepted')?.invalid && declarationForm.get('termsAccepted')?.touched" for="termsAcc">
         You must accept the terms
       </span>
     </label>

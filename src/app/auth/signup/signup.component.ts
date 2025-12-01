@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
+import { SignupService } from '../../core/services/signup.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.css']
 })
-// signup.component.ts
 export class SignupComponent implements OnInit {
   step: number = 1;
   steps = [
@@ -16,10 +17,15 @@ export class SignupComponent implements OnInit {
     { number: 5, name: 'Start Trading' }
   ];
 
-  signupData: any = {};
+  signupData: any = {}; // collect all steps here
   currentYear: number = new Date().getFullYear();
+  loading: boolean = false;
+  errorMessage: string = '';
 
-  constructor() { }
+  constructor(
+    private signupService: SignupService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void { }
 
@@ -46,6 +52,21 @@ export class SignupComponent implements OnInit {
 
   finishSignup(): void {
     console.log('Signup complete', this.signupData);
-    // redirect or show success message
+    this.loading = true;
+
+    this.signupService.registerUser(this.signupData).subscribe({
+      next: (response) => {
+        console.log('User registered successfully:', response);
+        this.loading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (error) => {
+        console.error('Signup failed:', error);
+        this.errorMessage = 'Signup failed. Please try again.';
+        this.loading = false;
+      }
+    });
+    
   }
+  
 }

@@ -1,3 +1,4 @@
+// further-info.component.ts
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -8,24 +9,17 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 })
 export class FurtherInfoComponent implements OnInit {
   furtherForm: FormGroup;
-
   @Output() stepCompleted = new EventEmitter<any>();
 
   idPreview: string = 'assets/img/id_exemple.jpg';
   selectedIDFile: File | null = null;
 
-  countries: string[] = [
-    'United States','United Kingdom','Canada','France','Germany','Spain','Italy','Australia','Japan','China',
-    'India','Brazil','Mexico','Russia','Tunisia','South Africa','Other' // add all as needed
-  ];
-
-  addressMap: string | null = null; // Map image URL
-
   constructor(private fb: FormBuilder) {
     this.furtherForm = this.fb.group({
-      address: ['', Validators.required],
-      phone: ['', Validators.required],
-      country: ['', Validators.required]
+      address: [''],          // extra
+      phone: [''],            // extra
+      country: [''],          // extra
+      id_document: ['']       // maps selectedIDFile
     });
   }
 
@@ -33,31 +27,15 @@ export class FurtherInfoComponent implements OnInit {
 
   onIDSelected(event: any) {
     if (event.target.files && event.target.files[0]) {
-      const file: File = event.target.files[0];
-      this.selectedIDFile = file;
-
+      this.selectedIDFile = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e: any) => this.idPreview = e.target.result;
-      reader.readAsDataURL(file);
-    }
-  }
-
-  // Update map preview dynamically using Google Maps Static API
-  updateMap() {
-    const address = this.furtherForm.get('address')?.value;
-    if (address && address.length > 3) {
-      this.addressMap = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(address)}&zoom=15&size=400x200&markers=color:red|${encodeURIComponent(address)}&key=YOUR_API_KEY`;
-    } else {
-      this.addressMap = null;
+      reader.readAsDataURL(this.selectedIDFile!);
+      this.furtherForm.patchValue({ id_document: this.selectedIDFile });
     }
   }
 
   submitStep() {
-    if (this.furtherForm.valid) {
-      const stepData = { ...this.furtherForm.value, idDocument: this.selectedIDFile };
-      this.stepCompleted.emit(stepData);
-    } else {
-      this.furtherForm.markAllAsTouched();
-    }
+    this.stepCompleted.emit(this.furtherForm.value);
   }
 }
