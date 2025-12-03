@@ -30,15 +30,19 @@
       <optgroup label="📈 Stock Indices">
         <option value="NASDAQ:TSLA">TSLA - Tesla</option>
         <option value="NASDAQ:AAPL">AAPL - Apple</option>
-        <option value="NYSE:SPX">S&P 500</option>
+        <option value="NASDAQ:GOOGL">GOOGL - Google</option>
+        <option value="NASDAQ:MSFT">MSFT - Microsoft</option>
+        <option value="NASDAQ:AMZN">AMZN - Amazon</option>
       </optgroup>
       <optgroup label="💱 Forex">
         <option value="FX:EURUSD">EUR/USD</option>
         <option value="FX:GBPUSD">GBP/USD</option>
+        <option value="FX:USDJPY">USD/JPY</option>
       </optgroup>
       <optgroup label="🪙 Crypto">
         <option value="BINANCE:BTCUSDT">BTC/USDT</option>
         <option value="BINANCE:ETHUSDT">ETH/USDT</option>
+        <option value="BINANCE:BNBUSDT">BNB/USDT</option>
       </optgroup>
     </select>
   </div>
@@ -65,8 +69,21 @@
     <input 
       type="number" 
       [(ngModel)]="price" 
+      (ngModelChange)="onPriceChange()"
       class="form-control" 
       placeholder="Enter price"
+      step="0.01">
+  </div>
+
+  <!-- Stop Price (for stop orders) -->
+  <div *ngIf="orderType === 'stop'" class="form-group mb-3">
+    <label>Stop Price:</label>
+    <input 
+      type="number" 
+      [(ngModel)]="stopPrice"
+      (ngModelChange)="onPriceChange()"
+      class="form-control" 
+      placeholder="Enter stop price"
       step="0.01">
   </div>
 
@@ -75,10 +92,12 @@
     <label>Quantity:</label>
     <input 
       type="number" 
-      [(ngModel)]="quantity" 
+      [(ngModel)]="quantity"
+      (ngModelChange)="onQuantityChange()"
       class="form-control" 
       placeholder="0.00"
-      step="0.01">
+      step="0.01"
+      min="0">
     
     <!-- Quick percentage buttons -->
     <div class="percentage-buttons mt-2">
@@ -89,26 +108,45 @@
     </div>
   </div>
 
-  <!-- Stop-Loss / Take-Profit (for stop orders) -->
-  <div *ngIf="orderType === 'stop'">
-    <div class="form-group mb-3">
-      <label>Stop-Loss:</label>
-      <input 
-        type="number" 
-        [(ngModel)]="stopLoss" 
-        class="form-control" 
-        placeholder="Stop-Loss price"
-        step="0.01">
-    </div>
+  <!-- Validation Indicator -->
+  <div *ngIf="isValidating" class="validation-indicator">
+    <i class="fa fa-spinner fa-spin"></i> Validating order...
+  </div>
 
-    <div class="form-group mb-3">
-      <label>Take-Profit:</label>
-      <input 
-        type="number" 
-        [(ngModel)]="takeProfit" 
-        class="form-control" 
-        placeholder="Take-Profit price"
-        step="0.01">
+  <!-- Validation Error -->
+  <div *ngIf="validation && !validation.valid" class="alert alert-warning mb-3">
+    <i class="fa fa-exclamation-triangle"></i> {{ getValidationError() }}
+  </div>
+
+  <!-- Validation Success (for BUY orders) -->
+  <div *ngIf="validation && validation.valid && orderSide === 'buy'" class="validation-success mb-3">
+    <div class="validation-item">
+      <span>Available Cash:</span>
+      <span class="value-green">${{ validation.available_cash | number:'1.2-2' }}</span>
+    </div>
+    <div class="validation-item">
+      <span>Required:</span>
+      <span>${{ validation.estimated_cost | number:'1.2-2' }}</span>
+    </div>
+    <div class="validation-item">
+      <span>Status:</span>
+      <span class="status-ok">✓ Sufficient Funds</span>
+    </div>
+  </div>
+
+  <!-- Validation Success (for SELL orders) -->
+  <div *ngIf="validation && validation.valid && orderSide === 'sell'" class="validation-success mb-3">
+    <div class="validation-item">
+      <span>Available Shares:</span>
+      <span class="value-green">{{ validation.available_shares | number:'1.2-4' }}</span>
+    </div>
+    <div class="validation-item">
+      <span>Required:</span>
+      <span>{{ quantity | number:'1.2-4' }}</span>
+    </div>
+    <div class="validation-item">
+      <span>Status:</span>
+      <span class="status-ok">✓ Sufficient Shares</span>
     </div>
   </div>
 
@@ -119,7 +157,7 @@
       <span class="summary-value">${{ calculateTotal() | number:'1.2-2' }}</span>
     </div>
     <div class="summary-row">
-      <span>Est. Fees:</span>
+      <span>Est. Fees (0.1%):</span>
       <span class="summary-value">${{ calculateFees() | number:'1.2-2' }}</span>
     </div>
     <div class="summary-row total">
@@ -129,11 +167,11 @@
   </div>
 
   <!-- Success/Error Messages -->
-  <div *ngIf="successMessage" class="alert alert-success">
-    {{ successMessage }}
+  <div *ngIf="successMessage" class="alert alert-success mb-3">
+    <i class="fa fa-check-circle"></i> {{ successMessage }}
   </div>
-  <div *ngIf="errorMessage" class="alert alert-error">
-    {{ errorMessage }}
+  <div *ngIf="errorMessage" class="alert alert-error mb-3">
+    <i class="fa fa-exclamation-circle"></i> {{ errorMessage }}
   </div>
 
   <!-- Place Order Button -->
@@ -141,12 +179,83 @@
     class="btn btn-place-order w-100"
     [ngClass]="{'btn-buy': orderSide === 'buy', 'btn-sell': orderSide === 'sell'}"
     (click)="placeOrder()" 
-    [disabled]="!canPlaceOrder() || isProcessing">
+    [disabled]="!canPlaceOrder() || isProcessing || isValidating">
     <span *ngIf="!isProcessing">
-      {{ orderSide === 'buy' ? ' Place Buy Order' : ' Place Sell Order' }}
+      <i [class]="orderSide === 'buy' ? 'fa fa-arrow-up' : 'fa fa-arrow-down'"></i>
+      {{ orderSide === 'buy' ? 'Place Buy Order' : 'Place Sell Order' }}
     </span>
     <span *ngIf="isProcessing">
       <i class="fa fa-spinner fa-spin"></i> Processing...
     </span>
   </button>
+
+  <!-- Help Text -->
+  <div class="help-text mt-3">
+    <small>
+      <i class="fa fa-info-circle"></i>
+      Orders are executed immediately for market orders, or placed pending for limit/stop orders.
+    </small>
+  </div>
 </div>
+
+<style>
+.validation-indicator {
+  padding: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  color: #3b82f6;
+  font-size: 14px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.validation-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.validation-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.validation-item:last-child {
+  margin-bottom: 0;
+  padding-top: 6px;
+  border-top: 1px solid rgba(16, 185, 129, 0.2);
+  font-weight: 600;
+}
+
+.value-green {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.status-ok {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.alert-warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #f59e0b;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.help-text {
+  text-align: center;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 12px;
+}
+
+.help-text i {
+  margin-right: 4px;
+}
+</style>

@@ -1,21 +1,23 @@
-import { Component, OnInit, Input, Output, EventEmitter, HostListener } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, HostListener, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd, Event } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { AuthService, User } from 'src/app/services/auth.service'; // make sure path is correct
-import { HttpClient } from '@angular/common/http';
+import { AuthService, User } from 'src/app/services/auth.service';
+import { BalanceService } from 'src/app/services/balance.service'; // ← NOUVEAU
+import { Subscription } from 'rxjs'; // ← pour se désabonner proprement
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   @Input() navbarSolid: boolean = false;
   @Output() openNews = new EventEmitter<void>();
 
   isLoggedIn: boolean = false;
   userName: string = '';
   userAvatar: string = '';
+  userEmail: string = '';
   userBalance: number = 0;
   balanceVisible: boolean = true;
 
@@ -27,24 +29,40 @@ export class HeaderComponent implements OnInit {
   notifications: any[] = [];
   unreadCount: number = 0;
 
-  constructor(private router: Router, private authService: AuthService, private http: HttpClient) {}
+  // Abonnement au solde partagé
+  private balanceSub!: Subscription;
+
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private balanceService: BalanceService  // ← Injection du service partagé
+  ) {}
 
   ngOnInit(): void {
-    // Detect dashboard route
+    // Détection du dashboard
     this.router.events
       .pipe(filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe(event => this.isDashboard = event.url.includes('/dashboard'));
 
-    // Load current user
+    // Chargement de l'utilisateur
     this.loadUser();
 
-    // Example notifications (replace with backend call if needed)
+    // Écoute en temps réel du solde (c’est ÇA qui fait tout !)
+    this.balanceSub = this.balanceService.balance$.subscribe(balance => {
+      this.userBalance = balance;
+    });
+
+    // Notifications mock (ou à remplacer plus tard)
     this.notifications = [
-      { id: 1, type: 'success', icon: '✅', title: 'Trade Executed', message: 'Your buy order for AAPL was filled at $178.50', time: '2m ago', unread: true },
-      { id: 2, type: 'warning', icon: '⚠️', title: 'Price Alert', message: 'TSLA reached your target price of $250', time: '15m ago', unread: true },
-      { id: 3, type: 'info', icon: '📊', title: 'Market Update', message: 'Fed announces interest rate decision', time: '1h ago', unread: false }
+      { id: 1, type: 'success', icon: 'Check', title: 'Trade Executed', message: 'Your buy order for AAPL was filled at $178.50', time: '2m ago', unread: true },
+      { id: 2, type: 'warning', icon: 'Warning', title: 'Price Alert', message: 'TSLA reached your target price of $250', time: '15m ago', unread: true },
+      { id: 3, type: 'info', icon: 'Chart', title: 'Market Update', message: 'Fed announces interest rate decision', time: '1h ago', unread: false }
     ];
     this.updateUnreadCount();
+  }
+
+  ngOnDestroy(): void {
+    this.balanceSub?.unsubscribe(); // Nettoyage propre
   }
 
   loadUser(): void {
@@ -54,28 +72,24 @@ export class HeaderComponent implements OnInit {
       return;
     }
 
-    // Support both synchronous User return or Observable<User>
-    if ((currentUser as any).subscribe && typeof (currentUser as any).subscribe === 'function') {
-      (currentUser as any).subscribe({
-        next: (user: User) => {
-          this.isLoggedIn = true;
-          this.userName = `${user.first_name} ${user.last_name}`;
-          this.userAvatar = (user as any).avatar || 'https://i.pravatar.cc/150?img=12';
-          // Fetch balance from backend
-          this.http.get<{ balance: number }>(`/user/balance`).subscribe(res => this.userBalance = res.balance);
-        },
-        error: () => { this.isLoggedIn = false; }
-      });
-    } else {
-      const user = currentUser as User;
+    const handleUser = (user: User) => {
       this.isLoggedIn = true;
       this.userName = `${user.first_name} ${user.last_name}`;
+      this.userEmail = user.email || 'trader@marketclimb.com';
       this.userAvatar = (user as any).avatar || 'https://i.pravatar.cc/150?img=12';
-      // Fetch balance from backend
-      this.http.get<{ balance: number }>(`/user/balance`).subscribe(res => this.userBalance = res.balance);
+    };
+
+    if ((currentUser as any).subscribe) {
+      (currentUser as any).subscribe({
+        next: (user: User) => handleUser(user),
+        error: () => this.isLoggedIn = false
+      });
+    } else {
+      handleUser(currentUser as User);
     }
   }
 
+  // Le reste reste IDENTIQUE
   logout(): void {
     const result: any = this.authService.logout();
 

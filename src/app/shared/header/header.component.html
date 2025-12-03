@@ -113,11 +113,12 @@
         <div class="profile-dropdown" *ngIf="profileDropdownOpen" @slideDown>
           <div class="dropdown-user-info">
             <img [src]="userAvatar" title="user" [alt]="userName" class="dropdown-avatar">
-            <div class="dropdown-user-details">
-              <div class="dropdown-user-name">{{ userName }}</div>
-              <div class="dropdown-user-email">trader@marketclimb.com</div>
+            <!-- AVANT (dans le dropdown) -->
+           <div class="dropdown-user-details">
+            <div class="dropdown-user-name">{{ userName }}</div>
+            <div class="dropdown-user-email">{{ userEmail }}</div>
             </div>
-          </div>
+           </div>
           <div class="dropdown-divider"></div>
           <a class="dropdown-item" (click)="goToProfile()">
             <i class="fas fa-user"></i>

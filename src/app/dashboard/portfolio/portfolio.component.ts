@@ -1,3 +1,4 @@
+// src/app/dashboard/portfolio/portfolio.component.ts
 import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { PortfolioService, Wallet, Transaction, PortfolioPerformancePoint } from '../../core/services/portfolio/portfolio.service';
 import { 
@@ -49,14 +50,21 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(private portfolioService: PortfolioService) {}
 
   ngOnInit(): void {
-    // Subscribe to wallets, transactions, performance
+    // Subscribe to all portfolio data streams
     this.subscriptions.push(
+      // Wallets subscription - updates total value and triggers change calculation
       this.portfolioService.wallets$.subscribe(w => {
         this.wallets = w;
         this.totalValue = this.portfolioService.getTotalValue();
         this.calculateChange();
       }),
-      this.portfolioService.transactions$.subscribe(t => this.transactions = t),
+      
+      // Transactions subscription
+      this.portfolioService.transactions$.subscribe(t => {
+        this.transactions = t;
+      }),
+      
+      // Performance subscription - updates chart when new data arrives
       this.portfolioService.performance$.subscribe(p => {
         this.performance = p;
         this.calculateChange();
@@ -68,11 +76,12 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    // Delay chart init to ensure canvas has size
+    // Delay chart initialization to ensure canvas has proper dimensions
     setTimeout(() => this.initChart(), 100);
   }
 
   ngOnDestroy(): void {
+    // Clean up subscriptions and chart
     this.subscriptions.forEach(sub => sub.unsubscribe());
     if (this.performanceChart) {
       this.performanceChart.destroy();
@@ -97,6 +106,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
       this.performanceChart.destroy();
     }
 
+    // Prepare chart data
     const labels = this.performance.map(p => {
       const date = new Date(p.date);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -104,6 +114,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const data = this.performance.map(p => p.value);
 
+    // Create the chart
     this.performanceChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -211,6 +222,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    // Update chart data with new performance points
     const labels = this.performance.map(p => {
       const date = new Date(p.date);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -226,7 +238,7 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
       const firstValue = this.performance[0].value;
       const lastValue = this.performance[this.performance.length - 1].value;
       this.totalChange = lastValue - firstValue;
-      this.totalChangePercent = (this.totalChange / firstValue) * 100;
+      this.totalChangePercent = firstValue > 0 ? (this.totalChange / firstValue) * 100 : 0;
     }
   }
 
