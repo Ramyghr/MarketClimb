@@ -1,0 +1,556 @@
+<div class="trading-wrapper">
+  <div class="trading-container">
+    <!-- Loading & Messages -->
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="spinner-large"></div>
+      <p>Loading...</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="alert alert-success" *ngIf="successMessage">
+      <span>✓ {{ successMessage }}</span>
+      <button (click)="successMessage = ''" class="alert-close">✖</button>
+    </div>
+
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <span>⚠ {{ errorMessage }}</span>
+      <button (click)="errorMessage = ''" class="alert-close">✖</button>
+    </div>
+
+    <!-- Trading Header -->
+    <div class="trading-header">
+      <button class="btn btn-secondary" (click)="backToOverview()">
+        ← Back to Overview
+      </button>
+      <h2>Trading Dashboard</h2>
+      <div class="simulation-info">
+        <span class="status-label active">Active</span>
+        <span>Progress: {{ simulationProgress }}%</span>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats" *ngIf="participantStats">
+      <div class="stat-item">
+        <span>Portfolio Value</span>
+        <span class="stat-value">{{ formatCurrency(participantStats.current_total_value) }}</span>
+      </div>
+      <div class="stat-item">
+        <span>Cash</span>
+        <span class="stat-value">{{ formatCurrency(participantStats.current_cash) }}</span>
+      </div>
+      <div class="stat-item">
+        <span>Return</span>
+        <span class="stat-value" [style.color]="crisisService.getPnlColor(participantStats.profit_loss)">
+          {{ formatPercentage(participantStats.total_return_pct) }}
+        </span>
+      </div>
+      <div class="stat-item">
+        <span>Rank</span>
+        <span class="stat-value">{{ getRankDisplay(participantStats.current_rank) }}</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="trading-content">
+      <div class="tabs-nav">
+        <button 
+          [class.active]="activeTab === 'trading'" 
+          (click)="setActiveTab('trading')" 
+          class="tab-btn">
+          <span>📈</span> Trading
+        </button>
+        <button 
+          [class.active]="activeTab === 'orders'" 
+          (click)="setActiveTab('orders')" 
+          class="tab-btn">
+          <span>📋</span> Orders
+        </button>
+        <button 
+          [class.active]="activeTab === 'leaderboard'" 
+          (click)="setActiveTab('leaderboard')" 
+          class="tab-btn">
+          <span>🏆</span> Leaderboard
+        </button>
+        <button 
+          [class.active]="activeTab === 'portfolio'" 
+          (click)="setActiveTab('portfolio')" 
+          class="tab-btn">
+          <span>💰</span> Portfolio
+        </button>
+      </div>
+
+      <!-- TRADING TAB -->
+      <div *ngIf="activeTab === 'trading'" class="tab-content trading-tab">
+        <div class="trading-layout">
+          <!-- Left: Chart -->
+          <div class="chart-section">
+            <div class="chart-header">
+              <h3>{{ selectedSymbol?.symbol || 'Select Symbol' }}</h3>
+              <div class="chart-controls">
+                <button class="btn btn-sm btn-secondary" (click)="toggleSymbolSelector()">
+                  {{ showSymbolSelector ? 'Hide' : 'Change' }} Symbol
+                </button>
+              </div>
+            </div>
+            
+            <div class="chart-container">
+              <!-- Symbol Selector -->
+              <div *ngIf="showSymbolSelector" class="symbol-selector">
+                <h4>Select Symbol</h4>
+                <div class="symbols-list">
+                  <div *ngFor="let symbol of availableAssets" 
+                       class="symbol-item"
+                       [class.selected]="selectedSymbol?.symbol === symbol.symbol"
+                       (click)="selectSymbol(symbol)">
+                    <div class="symbol-info">
+                      <span class="symbol-name">{{ symbol.symbol }}</span>
+                      <span class="symbol-price">${{ symbol.price_statistics?.start_price?.toFixed(2) || 'N/A' }}</span>
+                    </div>
+                    <div class="symbol-performance">
+                      <span [style.color]="crisisService.getPnlColor(symbol.performance?.total_return_pct || 0)">
+                        {{ (symbol.performance?.total_return_pct || 0).toFixed(1) }}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Market Data Display -->
+              <div *ngIf="selectedSymbol && marketData && !showSymbolSelector" class="market-data-display">
+                <div class="current-price">
+                  <div class="price-value">${{ marketData.current_price.toFixed(2) }}</div>
+                  <div class="price-change" [style.color]="crisisService.getPnlColor(marketData.close - marketData.open)">
+                    {{ (marketData.close - marketData.open).toFixed(2) }} 
+                    ({{ (((marketData.close - marketData.open) / marketData.open) * 100).toFixed(2) }}%)
+                  </div>
+                </div>
+                
+                <div class="ohlc-data">
+                  <div class="ohlc-item">
+                    <span>Open:</span>
+                    <span>${{ marketData.open.toFixed(2) }}</span>
+                  </div>
+                  <div class="ohlc-item">
+                    <span>High:</span>
+                    <span>${{ marketData.high.toFixed(2) }}</span>
+                  </div>
+                  <div class="ohlc-item">
+                    <span>Low:</span>
+                    <span>${{ marketData.low.toFixed(2) }}</span>
+                  </div>
+                  <div class="ohlc-item">
+                    <span>Close:</span>
+                    <span>${{ marketData.close.toFixed(2) }}</span>
+                  </div>
+                  <div class="ohlc-item">
+                    <span>Volume:</span>
+                    <span>{{ marketData.volume | number }}</span>
+                  </div>
+                </div>
+                
+                <div class="time-info">
+                  <span>{{ crisisService.formatDateTime(marketData.historical_time) }}</span>
+                </div>
+              </div>
+              
+              <!-- No Symbol Selected -->
+              <div *ngIf="!selectedSymbol && !showSymbolSelector" class="no-symbol">
+                <div class="no-symbol-icon">📊</div>
+                <h4>No Symbol Selected</h4>
+                <p>Select a symbol to view market data</p>
+                <button class="btn btn-primary" (click)="toggleSymbolSelector()">
+                  Browse Symbols
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Trading Panel -->
+          <div class="trade-panel">
+            <!-- Quick Trade -->
+            <div class="card trade-card">
+              <div class="card-header">
+                <h3>Quick Trade</h3>
+                <span class="card-subtitle">{{ selectedSymbol?.symbol || 'Select symbol' }}</span>
+              </div>
+              
+              <div class="card-body">
+                <!-- Trade Actions -->
+                <div class="trade-actions" *ngIf="selectedSymbol">
+                  <button class="trade-btn buy-btn" (click)="orderForm.side = 'BUY'; openOrderModal()">
+                    <span class="btn-icon">🟢</span>
+                    <span class="btn-text">Buy</span>
+                  </button>
+                  <button class="trade-btn sell-btn" (click)="orderForm.side = 'SELL'; openOrderModal()">
+                    <span class="btn-icon">🔴</span>
+                    <span class="btn-text">Sell</span>
+                  </button>
+                </div>
+                
+                <!-- Order Form -->
+                <div class="order-form" *ngIf="selectedSymbol">
+                  <div class="form-group">
+                    <label>Quantity</label>
+                    <div class="quantity-control">
+                      <button (click)="decrementQuantity(10)" class="qty-btn">-10</button>
+                      <button (click)="decrementQuantity(1)" class="qty-btn">-1</button>
+                      <input type="number" [(ngModel)]="orderForm.quantity" min="1" class="qty-input">
+                      <button (click)="incrementQuantity(1)" class="qty-btn">+1</button>
+                      <button (click)="incrementQuantity(10)" class="qty-btn">+10</button>
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Order Type</label>
+                    <select [(ngModel)]="orderForm.order_type" class="form-control">
+                      <option value="MARKET">Market</option>
+                      <option value="LIMIT">Limit</option>
+                      <option value="STOP">Stop</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group" *ngIf="orderForm.order_type === 'LIMIT'">
+                    <label>Limit Price</label>
+                    <input type="number" [(ngModel)]="orderForm.limit_price" step="0.01" class="form-control">
+                  </div>
+                  
+                  <div class="form-group" *ngIf="orderForm.order_type === 'STOP'">
+                    <label>Stop Price</label>
+                    <input type="number" [(ngModel)]="orderForm.stop_price" step="0.01" class="form-control">
+                  </div>
+                  
+                  <div class="order-summary" *ngIf="marketData">
+                    <div class="summary-item">
+                      <span>Current Price:</span>
+                      <span>${{ marketData.current_price.toFixed(2) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span>Estimated Cost:</span>
+                      <span>{{ formatCurrency(calculateEstimatedCost()) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span>Available Cash:</span>
+                      <span>{{ formatCurrency(participantStats?.current_cash || 0) }}</span>
+                    </div>
+                  </div>
+                  
+                  <button class="btn btn-primary btn-block" (click)="placeOrder()" [disabled]="!canTrade">
+                    Place {{ getOrderTypeDisplay(orderForm.order_type) }} Order
+                  </button>
+                </div>
+                
+                <!-- No Symbol Message -->
+                <div *ngIf="!selectedSymbol" class="no-symbol-message">
+                  <p>Select a symbol to start trading</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Symbol Info -->
+            <div class="card info-card" *ngIf="selectedSymbol">
+              <div class="card-header">
+                <h3>Symbol Info</h3>
+              </div>
+              <div class="card-body">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span>Symbol:</span>
+                    <span>{{ selectedSymbol.symbol }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Start Price:</span>
+                    <span>${{ selectedSymbol.price_statistics?.start_price?.toFixed(2) || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span>End Price:</span>
+                    <span>${{ selectedSymbol.price_statistics?.end_price?.toFixed(2) || 'N/A' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Return:</span>
+                    <span [style.color]="crisisService.getPnlColor(selectedSymbol.performance?.total_return_pct || 0)">
+                      {{ (selectedSymbol.performance?.total_return_pct || 0).toFixed(2) }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS TAB -->
+      <div *ngIf="activeTab === 'orders'" class="tab-content orders-tab">
+        <div class="orders-header">
+          <h3>Order History</h3>
+          <div class="orders-controls">
+            <select [(ngModel)]="orderStatusFilter" (change)="stateService.loadOrders(orderStatusFilter)" class="filter-select">
+              <option value="">All Orders</option>
+              <option value="pending">Pending</option>
+              <option value="filled">Filled</option>
+              <option value="partial">Partial</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <button class="btn btn-secondary" (click)="stateService.loadOrders()">
+              <span>🔄</span> Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="orders-table" *ngIf="orders.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Symbol</th>
+                <th>Type</th>
+                <th>Side</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of orders">
+                <td>{{ formatRelativeTime(order.placed_at_historical) }}</td>
+                <td><strong>{{ order.symbol }}</strong></td>
+                <td>{{ getOrderTypeDisplay(order.order_type) }}</td>
+                <td>
+                  <span class="side-badge" [class.buy]="order.side === 'BUY'" [class.sell]="order.side === 'SELL'">
+                    {{ order.side }}
+                  </span>
+                </td>
+                <td>{{ order.quantity }}</td>
+                <td>
+                  <span *ngIf="order.filled_price">${{ order.filled_price.toFixed(2) }}</span>
+                  <span *ngIf="!order.filled_price && order.limit_price">Limit: ${{ order.limit_price?.toFixed(2) }}</span>
+                  <span *ngIf="!order.filled_price && !order.limit_price">Market</span>
+                </td>
+                <td>
+                  <span class="status-badge" [style.background]="getStatusColor(order.status)">
+                    {{ order.status }}
+                  </span>
+                </td>
+                <td>
+                  <button *ngIf="order.status === 'pending'" 
+                          class="btn btn-sm btn-danger" 
+                          (click)="cancelOrder(order.id)">
+                    Cancel
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="orders.length === 0">
+          <div class="empty-icon">📋</div>
+          <h4>No Orders Yet</h4>
+          <p>Your order history will appear here once you start trading</p>
+          <button class="btn btn-primary" (click)="setActiveTab('trading')">
+            Start Trading
+          </button>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD TAB -->
+      <div *ngIf="activeTab === 'leaderboard'" class="tab-content leaderboard-tab">
+        <div class="leaderboard-header">
+          <h3>Leaderboard</h3>
+          <div class="leaderboard-info">
+            <span class="info-badge">{{ leaderboard?.total_participants || 0 }} Participants</span>
+            <span class="info-badge">Updated: {{ formatRelativeTime(leaderboard?.snapshot_at_historical || '') }}</span>
+          </div>
+        </div>
+
+        <div class="leaderboard-container" *ngIf="leaderboard && leaderboard.entries.length > 0">
+          <!-- Top 3 -->
+          <div class="top-three">
+            <div class="top-winner second" *ngIf="leaderboard.entries.length >= 2">
+              <div class="winner-rank">🥈</div>
+              <div class="winner-info">
+                <span class="winner-name">User #{{ leaderboard.entries[1].user_id }}</span>
+                <span class="winner-value">{{ formatLargeCurrency(leaderboard.entries[1].total_value) }}</span>
+              </div>
+              <span class="winner-return" [style.color]="crisisService.getPnlColor(leaderboard.entries[1].total_return_pct)">
+                {{ formatPercentage(leaderboard.entries[1].total_return_pct) }}
+              </span>
+            </div>
+
+            <div class="top-winner first">
+              <div class="winner-rank">🥇</div>
+              <div class="winner-info">
+                <span class="winner-name">User #{{ leaderboard.entries[0].user_id }}</span>
+                <span class="winner-value">{{ formatLargeCurrency(leaderboard.entries[0].total_value) }}</span>
+              </div>
+              <span class="winner-return" [style.color]="crisisService.getPnlColor(leaderboard.entries[0].total_return_pct)">
+                {{ formatPercentage(leaderboard.entries[0].total_return_pct) }}
+              </span>
+            </div>
+
+            <div class="top-winner third" *ngIf="leaderboard.entries.length >= 3">
+              <div class="winner-rank">🥉</div>
+              <div class="winner-info">
+                <span class="winner-name">User #{{ leaderboard.entries[2].user_id }}</span>
+                <span class="winner-value">{{ formatLargeCurrency(leaderboard.entries[2].total_value) }}</span>
+              </div>
+              <span class="winner-return" [style.color]="crisisService.getPnlColor(leaderboard.entries[2].total_return_pct)">
+                {{ formatPercentage(leaderboard.entries[2].total_return_pct) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Rest of Leaderboard -->
+          <div class="leaderboard-list">
+            <div *ngFor="let entry of leaderboard.entries.slice(3)" 
+                 class="leaderboard-row"
+                 [class.current-user]="entry.user_id === participantStats?.user_id">
+              <div class="row-rank">#{{ entry.rank }}</div>
+              <div class="row-user">
+                <span class="user-id">User #{{ entry.user_id }}</span>
+                <span *ngIf="entry.user_id === participantStats?.user_id" class="you-badge">YOU</span>
+              </div>
+              <div class="row-value">{{ formatLargeCurrency(entry.total_value) }}</div>
+              <div class="row-return" [style.color]="crisisService.getPnlColor(entry.total_return_pct)">
+                {{ formatPercentage(entry.total_return_pct) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="!leaderboard || leaderboard.entries.length === 0">
+          <div class="empty-icon">🏆</div>
+          <h4>Leaderboard Loading...</h4>
+          <p>The leaderboard will appear once trading starts</p>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO TAB -->
+      <div *ngIf="activeTab === 'portfolio'" class="tab-content portfolio-tab">
+        <div class="portfolio-header">
+          <h3>Your Portfolio</h3>
+          <div class="portfolio-summary">
+            <span class="summary-item">
+              Total Value: <strong>{{ formatCurrency(participantStats?.current_total_value || 0) }}</strong>
+            </span>
+            <span class="summary-item">
+              Return: 
+              <strong [style.color]="crisisService.getPnlColor(participantStats?.total_return_pct || 0)">
+                {{ formatPercentage(participantStats?.total_return_pct || 0) }}
+              </strong>
+            </span>
+          </div>
+        </div>
+
+        <div class="portfolio-stats" *ngIf="participantStats">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Cash Balance</span>
+              <span class="stat-value">{{ formatCurrency(participantStats.current_cash) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Active Positions</span>
+              <span class="stat-value">{{ participantStats.active_positions }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Total Trades</span>
+              <span class="stat-value">{{ participantStats.total_trades }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Win Rate</span>
+              <span class="stat-value">
+                {{ participantStats.total_trades > 0 ? 
+                   ((participantStats.profitable_trades / participantStats.total_trades) * 100).toFixed(1) : 0 }}%
+              </span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Max Drawdown</span>
+              <span class="stat-value" style="color: #ef4444">
+                {{ participantStats.max_drawdown_pct.toFixed(2) }}%
+              </span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Sharpe Ratio</span>
+              <span class="stat-value">{{ participantStats.sharpe_ratio?.toFixed(2) || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="portfolio-message">
+          <p>🎯 <strong>Trading Tip:</strong> Positions are managed through your orders. Close positions via the Orders tab.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Modal -->
+  <div class="modal-overlay" *ngIf="showOrderModal" (click)="showOrderModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Place Order</h3>
+        <button class="modal-close" (click)="showOrderModal = false">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="order-form-modal">
+          <div class="form-group">
+            <label>Symbol</label>
+            <input type="text" [(ngModel)]="orderForm.symbol" readonly class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label>Side</label>
+            <select [(ngModel)]="orderForm.side" class="form-control">
+              <option value="BUY">Buy</option>
+              <option value="SELL">Sell</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" [(ngModel)]="orderForm.quantity" min="1" step="1" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label>Order Type</label>
+            <select [(ngModel)]="orderForm.order_type" class="form-control">
+              <option value="MARKET">Market</option>
+              <option value="LIMIT">Limit</option>
+              <option value="STOP">Stop</option>
+            </select>
+          </div>
+          
+          <div class="form-group" *ngIf="orderForm.order_type === 'LIMIT'">
+            <label>Limit Price</label>
+            <input type="number" [(ngModel)]="orderForm.limit_price" step="0.01" class="form-control">
+          </div>
+          
+          <div class="form-group" *ngIf="orderForm.order_type === 'STOP'">
+            <label>Stop Price</label>
+            <input type="number" [(ngModel)]="orderForm.stop_price" step="0.01" class="form-control">
+          </div>
+          
+          <div class="order-summary" *ngIf="marketData && participantStats">
+            <div class="summary-item">
+              <span>Current Price:</span>
+              <span>${{ marketData.current_price.toFixed(2) }}</span>
+            </div>
+            <div class="summary-item">
+              <span>Estimated {{ orderForm.side === 'BUY' ? 'Cost' : 'Proceeds' }}:</span>
+              <span>{{ formatCurrency(calculateEstimatedCost()) }}</span>
+            </div>
+            <div class="summary-item">
+              <span>Available Cash:</span>
+              <span>{{ formatCurrency(participantStats.current_cash) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showOrderModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="placeOrder()">Place Order</button>
+      </div>
+    </div>
+  </div>
+</div>

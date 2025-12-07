@@ -6,29 +6,111 @@
 
   <!-- Chat Box -->
   <div class="chat-box" *ngIf="isOpen">
+    <!-- Header -->
     <div class="chat-header">
       <div class="header-left">
         <img src="assets/img/LOGO.png" alt="AI" class="header-logo" />
         <h4>Market Climb AI</h4>
       </div>
-      <button class="close-btn" (click)="toggleChat()">✖</button>
-    </div>
-
-    <div class="chat-body" #chatBody>
-      <div *ngFor="let msg of messages" 
-           [ngClass]="{'user': msg.from === 'user', 'bot': msg.from === 'bot'}"
-           class="message">
-        <div class="bubble">{{ msg.text }}</div>
+      <div class="header-actions">
+        <button class="icon-btn" (click)="toggleConversations()" title="Conversations">
+          <span class="icon">💬</span>
+        </button>
+        <button class="icon-btn" (click)="startNewConversation()" title="New Chat">
+          <span class="icon">➕</span>
+        </button>
+        <button class="close-btn" (click)="toggleChat()">✖</button>
       </div>
     </div>
 
+    <!-- Conversations Sidebar -->
+    <div class="conversations-sidebar" *ngIf="showConversations" [@slideIn]>
+      <div class="sidebar-header">
+        <h5>Conversations</h5>
+        <button class="icon-btn-small" (click)="toggleConversations()">✖</button>
+      </div>
+
+      <div class="conversations-list" *ngIf="!loadingConversations">
+        <div 
+          *ngFor="let conv of conversations"
+          class="conversation-item"
+          [class.active]="conv.id === currentConversationId"
+          (click)="loadConversation(conv.id)">
+          <div class="conversation-content">
+            <div class="conversation-title">{{ getConversationPreview(conv) }}</div>
+            <div class="conversation-meta">
+              <span class="message-count">{{ conv.message_count }} messages</span>
+              <span class="conversation-date">{{ formatTimestamp(conv.updated_at) }}</span>
+            </div>
+          </div>
+          <button 
+            class="delete-btn" 
+            (click)="deleteConversation(conv.id, $event)"
+            title="Delete">
+            🗑️
+          </button>
+        </div>
+
+        <div *ngIf="conversations.length === 0" class="empty-state">
+          <p>No conversations yet</p>
+          <p class="empty-hint">Start chatting to create your first conversation!</p>
+        </div>
+      </div>
+
+      <div class="loading-conversations" *ngIf="loadingConversations">
+        <div class="spinner"></div>
+        <p>Loading conversations...</p>
+      </div>
+    </div>
+
+    <!-- Chat Body -->
+    <div class="chat-body" #chatBody [class.with-sidebar]="showConversations">
+      <div 
+        *ngFor="let msg of messages" 
+        [ngClass]="{'user': msg.from === 'user', 'bot': msg.from === 'bot'}"
+        class="message">
+        <div class="bubble">
+          <div class="message-text">{{ msg.text }}</div>
+          <div class="message-time" *ngIf="msg.timestamp">
+            {{ formatTimestamp(msg.timestamp) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div *ngIf="isLoading" class="message bot">
+        <div class="bubble loading-bubble">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="loading-text">AI is thinking...</div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="messages.length === 0" class="empty-chat">
+        <img src="assets/img/LOGO.png" alt="AI" class="empty-logo" />
+        <h3>Start a conversation</h3>
+        <p>Ask me anything about trading, markets, or your portfolio!</p>
+      </div>
+    </div>
+
+    <!-- Input Area -->
     <div class="chat-input">
       <input 
         type="text" 
         [(ngModel)]="userInput" 
         placeholder="Ask me about trading..." 
-        (keyup.enter)="sendMessage()" />
-      <button (click)="sendMessage()">➤</button>
+        (keyup.enter)="sendMessage()"
+        [disabled]="isLoading" />
+      <button 
+        (click)="sendMessage()"
+        [disabled]="isLoading || !userInput.trim()">
+        <span *ngIf="!isLoading">➤</span>
+        <span *ngIf="isLoading" class="btn-spinner"></span>
+      </button>
     </div>
   </div>
 </div>

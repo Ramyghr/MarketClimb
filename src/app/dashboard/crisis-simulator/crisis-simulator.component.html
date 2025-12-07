@@ -1,0 +1,1013 @@
+<div class="simulator-wrapper">
+  <div class="simulator-container">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="spinner-large"></div>
+      <p>Loading...</p>
+    </div>
+
+    <!-- Success Message -->
+    <div class="alert alert-success" *ngIf="successMessage">
+      <span>✓ {{ successMessage }}</span>
+      <button (click)="successMessage = ''" class="alert-close">✖</button>
+    </div>
+
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <span>⚠ {{ errorMessage }}</span>
+      <button (click)="errorMessage = ''" class="alert-close">✖</button>
+    </div>
+
+    <!-- Hero Header -->
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <span class="hero-icon">⚡</span>
+      Crisis Simulator
+    </h1>
+    <p class="hero-subtitle">Experience historical market crises in real-time trading simulation</p>
+    
+    <!-- Quick Actions -->
+    <div class="hero-actions" *ngIf="activeSimulation">
+      <!-- ADD THIS BUTTON -->
+      <button 
+        *ngIf="participantStats && (activeSimulation.status === 'active' || activeSimulation.status === 'ACTIVE')"
+        class="btn btn-outline btn-primary" 
+        (click)="goToTrading()">
+        <span>📈</span> Trading Dashboard
+      </button>
+      
+      <button class="btn btn-outline" (click)="refreshAllData()">
+        <span>🔄</span> Refresh
+      </button>
+      <button class="btn btn-outline" (click)="clearMessages()">
+        <span>🗑️</span> Clear Messages
+      </button>
+    </div>
+  </div>
+</div>
+
+    <!-- NO ACTIVE SIMULATION -->
+    <div *ngIf="!activeSimulation && !isLoading" class="welcome-section">
+      <div class="welcome-card">
+        <div class="welcome-icon">🎯</div>
+        <h2>No Active Simulation</h2>
+        <p>There are currently no active simulations available.</p>
+        <p class="welcome-sub">Check back soon or contact an administrator to start a new simulation.</p>
+        
+        <div class="welcome-actions">
+          <button class="btn btn-primary btn-lg" (click)="loadActiveSimulation()">
+            <span>🔄</span>
+            Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENDING SIMULATION - Join Screen -->
+    <div *ngIf="activeSimulation && (activeSimulation.status === 'pending' || activeSimulation.status === 'PENDING')" class="join-section">
+      <div class="join-card">
+        <div class="join-header">
+          <div class="crisis-badge">
+            <span class="crisis-icon">{{ getCrisisIcon(activeSimulation.crisis_type) }}</span>
+            <div>
+              <h2>{{ crisisService.formatCrisisType(activeSimulation.crisis_type) }}</h2>
+              <span class="status-label pending">⏳ Waiting to Start</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="join-body">
+          <div class="simulation-info-grid">
+            <div class="info-card">
+              <div class="info-icon">📅</div>
+              <div>
+                <div class="info-label">Historical Period</div>
+                <div class="info-value">{{ crisisService.formatDate(activeSimulation.historical_start_date) }} - {{ crisisService.formatDate(activeSimulation.historical_end_date) }}</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">⏱</div>
+              <div>
+                <div class="info-label">Duration</div>
+                <div class="info-value">{{ activeSimulation.duration_minutes }} minutes</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">👥</div>
+              <div>
+                <div class="info-label">Participants</div>
+                <div class="info-value">{{ activeSimulation.participant_count }} / {{ activeSimulation.max_participants }}</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">🏆</div>
+              <div>
+                <div class="info-label">Mode</div>
+                <div class="info-value">{{ activeSimulation.is_competitive ? 'Competitive' : 'Practice' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- JOIN FORM - NOT JOINED YET -->
+          <div class="join-status" *ngIf="!participantStats">
+            <h3>💰 Ready to Join?</h3>
+            <p>Set your starting capital and join the simulation</p>
+            
+            <div class="join-form">
+              <div class="form-group-inline">
+                <label>Starting Capital:</label>
+                <div class="input-group">
+                  <span class="input-prefix">$</span>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="joinForm.initialCash"
+                    min="10000"
+                    max="10000000"
+                    step="10000"
+                    class="form-control-lg"
+                    placeholder="100000">
+                </div>
+              </div>
+              
+              <button 
+                class="btn btn-primary btn-xl"
+                (click)="joinSimulation()"
+                [disabled]="activeSimulation.participant_count >= activeSimulation.max_participants">
+                <span class="btn-icon">{{ activeSimulation.participant_count >= activeSimulation.max_participants ? '🔒' : '🚀' }}</span>
+                <span>{{ activeSimulation.participant_count >= activeSimulation.max_participants ? 'Simulation Full' : 'Join Simulation' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ALREADY JOINED -->
+<div class="already-joined" *ngIf="participantStats">
+  <div class="joined-badge">
+    <span class="check-icon">✓</span>
+    <div>
+      <h3>You're In!</h3>
+      <p>Waiting for simulation to start...</p>
+    </div>
+  </div>
+  
+  <div class="joined-stats">
+    <div class="joined-stat">
+      <span class="stat-label">Your Starting Capital</span>
+      <span class="stat-value-large">{{ crisisService.formatCurrency(participantStats.initial_value) }}</span>
+    </div>
+  </div>
+
+  <!-- ADD THIS BUTTON -->
+  <button class="btn btn-primary" (click)="goToTrading()">
+    <span>🚀</span> Go to Trading Dashboard
+  </button>
+  
+  <button class="btn btn-secondary" (click)="leaveSimulation()">
+    Leave Simulation
+  </button>
+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE SIMULATION - Trading Interface (User HAS JOINED) -->
+    <div *ngIf="activeSimulation && (activeSimulation.status === 'active' || activeSimulation.status === 'ACTIVE') && participantStats" class="trading-section">
+  
+  <!-- ADD THIS NAVIGATION BAR -->
+  <div class="navigation-bar">
+    <div class="nav-left">
+      <button class="btn btn-secondary btn-sm" (click)="goToTrading()">
+        <span>📈</span> Trading Dashboard
+      </button>
+    </div>
+    <div class="nav-center">
+      <h3>{{ crisisService.formatCrisisType(activeSimulation.crisis_type) }} - Active Trading</h3>
+    </div>
+    <div class="nav-right">
+      <span class="simulation-progress">{{ simulationProgress }}% Complete</span>
+    </div>
+  </div>
+      <!-- Quick Stats Bar -->
+      <div class="quick-stats-bar">
+        <div class="quick-stat">
+          <span class="quick-label">Portfolio</span>
+          <span class="quick-value">{{ crisisService.formatCurrency(participantStats.current_total_value) }}</span>
+          <span class="quick-change" [style.color]="crisisService.getPnlColor(participantStats.profit_loss)">
+            {{ crisisService.formatPercentage(participantStats.total_return_pct) }}
+          </span>
+        </div>
+
+        <div class="quick-stat">
+          <span class="quick-label">Cash</span>
+          <span class="quick-value">{{ crisisService.formatCurrency(participantStats.current_cash) }}</span>
+        </div>
+
+        <div class="quick-stat">
+          <span class="quick-label">Positions</span>
+          <span class="quick-value">{{ participantStats.active_positions }}</span>
+        </div>
+
+        <div class="quick-stat">
+          <span class="quick-label">Rank</span>
+          <span class="quick-value rank">{{ getRankDisplay(participantStats.current_rank) }}</span>
+        </div>
+
+        <div class="quick-stat progress-stat">
+          <span class="quick-label">Progress</span>
+          <div class="mini-progress">
+            <div class="mini-progress-fill" [style.width.%]="simulationProgress"></div>
+          </div>
+          <span class="quick-value-sm">{{ simulationProgress }}%</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="main-tabs">
+        <button [class.active]="activeTab === 'trading'" (click)="setActiveTab('trading')" class="main-tab-btn">
+          <span>📈</span> Trading
+        </button>
+        <button [class.active]="activeTab === 'orders'" (click)="setActiveTab('orders')" class="main-tab-btn">
+          <span>📋</span> Orders
+        </button>
+        <button [class.active]="activeTab === 'leaderboard'" (click)="setActiveTab('leaderboard')" class="main-tab-btn">
+          <span>🏆</span> Leaderboard
+        </button>
+        <button [class.active]="activeTab === 'info'" (click)="setActiveTab('info')" class="main-tab-btn">
+          <span>ℹ️</span> Info
+        </button>
+        <button [class.active]="activeTab === 'participants'" (click)="setActiveTab('participants')" class="main-tab-btn">
+          <span>👥</span> Participants
+        </button>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content" [ngSwitch]="activeTab">
+        
+        <!-- TRADING TAB -->
+        <div *ngSwitchCase="'trading'" class="trading-tab">
+          <div class="trading-grid">
+            <!-- Left Panel: Chart -->
+            <div class="chart-panel">
+              <div class="card full-height">
+                <div class="card-header">
+                  <div class="chart-header">
+                    <h3>{{ selectedSymbol?.symbol || 'Select Symbol' }}</h3>
+                    <div class="chart-controls">
+                      <button class="btn btn-sm btn-secondary" (click)="toggleSymbolSelector()">
+                        {{ showSymbolSelector ? 'Hide' : 'Change' }} Symbol
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- Candle Chart Component -->
+                  <div *ngIf="selectedSymbol && marketData" class="chart-container">
+                    <!-- You'll need to implement a proper chart component here -->
+                    <!-- For now, show a placeholder with market data -->
+                    <div class="chart-placeholder" *ngIf="!showSymbolSelector">
+                      <div class="chart-data-summary">
+                        <div class="price-display-large">
+                          <div class="price-label">Current Price</div>
+                          <div class="price-value-large">${{ marketData.current_price.toFixed(2) }}</div>
+                          <div class="price-change-large" [style.color]="crisisService.getPnlColor(marketData.close - marketData.open)">
+                            {{ (marketData.close - marketData.open).toFixed(2) }} 
+                            ({{ (((marketData.close - marketData.open) / marketData.open) * 100).toFixed(2) }}%)
+                          </div>
+                        </div>
+                        
+                        <div class="ohlc-grid">
+                          <div class="ohlc-item">
+                            <span class="ohlc-label">Open</span>
+                            <span class="ohlc-value">${{ marketData.open.toFixed(2) }}</span>
+                          </div>
+                          <div class="ohlc-item">
+                            <span class="ohlc-label">High</span>
+                            <span class="ohlc-value">${{ marketData.high.toFixed(2) }}</span>
+                          </div>
+                          <div class="ohlc-item">
+                            <span class="ohlc-label">Low</span>
+                            <span class="ohlc-value">${{ marketData.low.toFixed(2) }}</span>
+                          </div>
+                          <div class="ohlc-item">
+                            <span class="ohlc-label">Close</span>
+                            <span class="ohlc-value">${{ marketData.close.toFixed(2) }}</span>
+                          </div>
+                          <div class="ohlc-item">
+                            <span class="ohlc-label">Volume</span>
+                            <span class="ohlc-value">{{ marketData.volume | number }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Simple price trend visualization -->
+                        <div class="price-trend">
+                          <div class="trend-label">Price Trend</div>
+                          <div class="trend-visual">
+                            <div class="trend-bar" [style.width.%]="50 + ((marketData.current_price - marketData.open) / marketData.open * 25)"></div>
+                          </div>
+                          <div class="trend-info">
+                            <span>Time: {{ crisisService.formatDateTime(marketData.historical_time) }}</span>
+                            <span>Phase: {{ marketData.simulation_phase || 'N/A' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Symbol Selector -->
+                    <div *ngIf="showSymbolSelector" class="symbol-selector-panel">
+                      <h4>Select Trading Symbol</h4>
+                      <div class="symbols-grid">
+                        <div *ngFor="let symbol of availableAssets" 
+                             class="symbol-card-selector"
+                             [class.selected]="selectedSymbol?.symbol === symbol.symbol"
+                             (click)="selectSymbol(symbol)">
+                          <div class="symbol-card-header">
+                            <span class="symbol-ticker">{{ symbol.symbol }}</span>
+                            <span class="symbol-price">${{ symbol.price_statistics?.start_price?.toFixed(2) || 'N/A' }}</span>
+                          </div>
+                          <div class="symbol-card-stats">
+                            <div class="stat-item">
+                              <span>Return:</span>
+                              <span [style.color]="crisisService.getPnlColor(symbol.performance?.total_return_pct || 0)">
+                                {{ (symbol.performance?.total_return_pct || 0).toFixed(1) }}%
+                              </span>
+                            </div>
+                            <div class="stat-item">
+                              <span>Volatility:</span>
+                              <span>{{ (symbol.performance?.annualized_volatility_pct || 0).toFixed(1) }}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- No Symbol Selected -->
+                  <div *ngIf="!selectedSymbol" class="no-symbol-placeholder">
+                    <div class="placeholder-icon">📊</div>
+                    <h4>No Symbol Selected</h4>
+                    <p>Select a symbol to view market data and start trading</p>
+                    <button class="btn btn-primary" (click)="toggleSymbolSelector()">
+                      Browse Symbols
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Panel: Trading & Info -->
+            <div class="trading-panel">
+              <!-- Quick Trade Card -->
+              <div class="card">
+                <div class="card-header">
+                  <h3>Quick Trade</h3>
+                  <span class="card-subtitle">{{ selectedSymbol?.symbol || 'Select symbol first' }}</span>
+                </div>
+                <div class="card-body">
+                  <!-- Quick Trade Buttons -->
+                  <div class="quick-trade-buttons" *ngIf="selectedSymbol">
+                    <button class="trade-action-btn buy-action" (click)="orderForm.side = 'BUY'; openOrderModal()">
+                      <span class="action-icon">🟢</span>
+                      <span class="action-label">Buy</span>
+                      <span class="action-sub">Long Position</span>
+                    </button>
+                    <button class="trade-action-btn sell-action" (click)="orderForm.side = 'SELL'; openOrderModal()">
+                      <span class="action-icon">🔴</span>
+                      <span class="action-label">Sell</span>
+                      <span class="action-sub">Short Position</span>
+                    </button>
+                  </div>
+                  
+                  <!-- Order Form Preview -->
+                  <div class="order-preview" *ngIf="selectedSymbol && marketData">
+                    <div class="preview-row">
+                      <span>Symbol:</span>
+                      <strong>{{ selectedSymbol.symbol }}</strong>
+                    </div>
+                    <div class="preview-row">
+                      <span>Current Price:</span>
+                      <strong>${{ marketData.current_price.toFixed(2) }}</strong>
+                    </div>
+                    <div class="preview-row">
+                      <span>Available Cash:</span>
+                      <strong>{{ crisisService.formatCurrency(participantStats.current_cash) }}</strong>
+                    </div>
+                    
+                    <div class="quantity-selector">
+                      <label>Quantity:</label>
+                      <div class="quantity-controls">
+                        <button (click)="decrementQuantity(10)" class="qty-btn">-10</button>
+                        <button (click)="decrementQuantity(1)" class="qty-btn">-1</button>
+                        <input type="number" [(ngModel)]="orderForm.quantity" min="1" class="qty-input">
+                        <button (click)="incrementQuantity(1)" class="qty-btn">+1</button>
+                        <button (click)="incrementQuantity(10)" class="qty-btn">+10</button>
+                      </div>
+                    </div>
+                    
+                    <div class="order-type-selector">
+                      <label>Order Type:</label>
+                      <select [(ngModel)]="orderForm.order_type" class="form-control-sm">
+                        <option value="MARKET">Market</option>
+                        <option value="LIMIT">Limit</option>
+                        <option value="STOP">Stop</option>
+                      </select>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-block" (click)="placeOrder()" [disabled]="!canTrade">
+                      Place {{ getOrderTypeDisplay(orderForm.order_type) }} Order
+                    </button>
+                  </div>
+                  
+                  <!-- No Symbol Selected -->
+                  <div *ngIf="!selectedSymbol" class="no-symbol-message">
+                    <p>Select a symbol from the chart panel to start trading</p>
+                    <button class="btn btn-secondary" (click)="toggleSymbolSelector()">
+                      View All Symbols
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Symbol Info Card -->
+              <div class="card" *ngIf="selectedSymbol">
+                <div class="card-header">
+                  <h3>Symbol Info</h3>
+                </div>
+                <div class="card-body">
+                  <div class="symbol-info-grid">
+                    <div class="info-item">
+                      <span>Start Price:</span>
+                      <span>${{ selectedSymbol.price_statistics.start_price.toFixed(2) }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span>End Price:</span>
+                      <span>${{ selectedSymbol.price_statistics.end_price.toFixed(2) }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span>Total Return:</span>
+                      <span [style.color]="crisisService.getPnlColor(selectedSymbol.performance.total_return_pct)">
+                        {{ selectedSymbol.performance.total_return_pct.toFixed(2) }}%
+                      </span>
+                    </div>
+                    <div class="info-item">
+                      <span>Max Drawdown:</span>
+                      <span>{{ selectedSymbol.performance.max_drawdown_pct.toFixed(2) }}%</span>
+                    </div>
+                    <div class="info-item">
+                      <span>Volatility:</span>
+                      <span>{{ selectedSymbol.performance.annualized_volatility_pct.toFixed(2) }}%</span>
+                    </div>
+                    <div class="info-item">
+                      <span>Data Points:</span>
+                      <span>{{ selectedSymbol.data_points }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Trading Constraints -->
+              <div class="card" *ngIf="crisisSymbols">
+                <div class="card-header">
+                  <h3>Trading Rules</h3>
+                </div>
+                <div class="card-body">
+                  <div class="constraints-list">
+                    <div class="constraint-item">
+                      <span>Short Selling:</span>
+                      <span [class.allowed]="crisisSymbols.trading_constraints.short_selling_allowed">
+                        {{ crisisSymbols.trading_constraints.short_selling_allowed ? 'Allowed' : 'Not Allowed' }}
+                      </span>
+                    </div>
+                    <div class="constraint-item">
+                      <span>Margin Requirement:</span>
+                      <span>{{ (crisisSymbols.trading_constraints.margin_requirement * 100).toFixed(0) }}%</span>
+                    </div>
+                    <div class="constraint-item">
+                      <span>Commission:</span>
+                      <span>{{ (crisisSymbols.trading_constraints.commission_rate * 100).toFixed(3) }}%</span>
+                    </div>
+                    <div class="constraint-item">
+                      <span>Min Tick Size:</span>
+                      <span>${{ crisisSymbols.trading_constraints.min_tick_size.toFixed(2) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ORDERS TAB -->
+        <div *ngSwitchCase="'orders'" class="orders-tab">
+          <div class="orders-header">
+            <h3>Order History</h3>
+            <div class="orders-controls">
+              <select [(ngModel)]="orderStatusFilter" (change)="loadOrders(orderStatusFilter)" class="filter-select">
+                <option value="">All Orders</option>
+                <option value="pending">Pending</option>
+                <option value="filled">Filled</option>
+                <option value="partial">Partial</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button class="btn btn-secondary" (click)="loadOrders()">
+                <span>🔄</span> Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="orders-table" *ngIf="orders.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Symbol</th>
+                  <th>Type</th>
+                  <th>Side</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let order of orders">
+                  <td>{{ crisisService.formatRelativeTime(order.placed_at_historical) }}</td>
+                  <td><strong>{{ order.symbol }}</strong></td>
+                  <td>{{ getOrderTypeDisplay(order.order_type) }}</td>
+                  <td>
+                    <span class="side-badge" [class.buy]="order.side === 'BUY'" [class.sell]="order.side === 'SELL'">
+                      {{ order.side }}
+                    </span>
+                  </td>
+                  <td>{{ order.quantity }}</td>
+                  <td>
+                    <span *ngIf="order.filled_price">${{ order.filled_price.toFixed(2) }}</span>
+                    <span *ngIf="!order.filled_price && order.limit_price">Limit: ${{ order.limit_price?.toFixed(2) }}</span>
+                    <span *ngIf="!order.filled_price && !order.limit_price">Market</span>
+                  </td>
+                  <td>
+                    <span class="status-badge" [style.background]="getStatusColor(order.status)">
+                      {{ order.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <button *ngIf="order.status === 'pending'" 
+                            class="btn btn-sm btn-danger" 
+                            (click)="cancelOrder(order.id)">
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" *ngIf="orders.length === 0">
+            <div class="empty-icon">📋</div>
+            <h4>No Orders Yet</h4>
+            <p>Your order history will appear here once you start trading</p>
+            <button class="btn btn-primary" (click)="setActiveTab('trading')">
+              Start Trading
+            </button>
+          </div>
+        </div>
+
+        <!-- LEADERBOARD TAB -->
+        <div *ngSwitchCase="'leaderboard'" class="leaderboard-tab">
+          <div class="leaderboard-header">
+            <h3>Leaderboard</h3>
+            <div class="leaderboard-info">
+              <span class="info-badge">{{ leaderboard?.total_participants || 0 }} Participants</span>
+              <span class="info-badge">Snapshot: {{ crisisService.formatDateTime(leaderboard?.snapshot_at_historical || '') }}</span>
+            </div>
+          </div>
+
+          <div class="leaderboard-container" *ngIf="leaderboard && leaderboard.entries.length > 0">
+            <!-- Top 3 Winners -->
+            <div class="top-three-section">
+              <div class="top-three">
+                <div class="top-winner second" *ngIf="leaderboard.entries.length >= 2">
+                  <div class="winner-rank">🥈</div>
+                  <div class="winner-info">
+                    <span class="winner-name">User #{{ leaderboard.entries[1].user_id }}</span>
+                    <span class="winner-value">{{ crisisService.formatLargeCurrency(leaderboard.entries[1].total_value) }}</span>
+                  </div>
+                  <span class="winner-return" [style.color]="crisisService.getPnlColor(leaderboard.entries[1].total_return_pct)">
+                    {{ crisisService.formatPercentage(leaderboard.entries[1].total_return_pct) }}
+                  </span>
+                </div>
+
+                <div class="top-winner first">
+                  <div class="winner-rank">🥇</div>
+                  <div class="winner-info">
+                    <span class="winner-name">User #{{ leaderboard.entries[0].user_id }}</span>
+                    <span class="winner-value">{{ crisisService.formatLargeCurrency(leaderboard.entries[0].total_value) }}</span>
+                  </div>
+                  <span class="winner-return" [style.color]="crisisService.getPnlColor(leaderboard.entries[0].total_return_pct)">
+                    {{ crisisService.formatPercentage(leaderboard.entries[0].total_return_pct) }}
+                  </span>
+                </div>
+
+                <div class="top-winner third" *ngIf="leaderboard.entries.length >= 3">
+                  <div class="winner-rank">🥉</div>
+                  <div class="winner-info">
+                    <span class="winner-name">User #{{ leaderboard.entries[2].user_id }}</span>
+                    <span class="winner-value">{{ crisisService.formatLargeCurrency(leaderboard.entries[2].total_value) }}</span>
+                  </div>
+                  <span class="winner-return" [style.color]="crisisService.getPnlColor(leaderboard.entries[2].total_return_pct)">
+                    {{ crisisService.formatPercentage(leaderboard.entries[2].total_return_pct) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Full Leaderboard Table -->
+            <div class="leaderboard-table">
+              <div *ngFor="let entry of leaderboard.entries.slice(3)" 
+                   class="leaderboard-row"
+                   [class.current-user]="entry.user_id === participantStats.user_id">
+                <div class="row-rank">#{{ entry.rank }}</div>
+                <div class="row-user">
+                  <span class="user-id">User #{{ entry.user_id }}</span>
+                  <span *ngIf="entry.user_id === participantStats.user_id" class="you-badge">YOU</span>
+                </div>
+                <div class="row-value">{{ crisisService.formatLargeCurrency(entry.total_value) }}</div>
+                <div class="row-return" [style.color]="crisisService.getPnlColor(entry.total_return_pct)">
+                  {{ crisisService.formatPercentage(entry.total_return_pct) }}
+                </div>
+                <div class="row-pnl" [style.color]="crisisService.getPnlColor(entry.profit_loss)">
+                  {{ crisisService.formatCurrency(entry.profit_loss) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="!leaderboard || leaderboard.entries.length === 0">
+            <div class="empty-icon">🏆</div>
+            <h4>Leaderboard Loading...</h4>
+            <p>The leaderboard will appear once the simulation starts</p>
+          </div>
+        </div>
+
+        <!-- INFO TAB -->
+        <div *ngSwitchCase="'info'" class="info-tab">
+          <div class="info-grid">
+            <!-- Simulation Info -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Simulation Details</h3>
+              </div>
+              <div class="card-body">
+                <div class="info-list">
+                  <div class="info-item">
+                    <span>Crisis Type:</span>
+                    <span>{{ crisisService.formatCrisisType(activeSimulation.crisis_type) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Status:</span>
+                    <span class="status-badge" [style.background]="getSimulationStatusColor(activeSimulation.status)">
+                      {{ activeSimulation.status }}
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span>Progress:</span>
+                    <span>{{ simulationProgress }}%</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Historical Period:</span>
+                    <span>{{ crisisService.formatDate(activeSimulation.historical_start_date) }} - {{ crisisService.formatDate(activeSimulation.historical_end_date) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Current Time:</span>
+                    <span>{{ crisisService.formatDateTime(activeSimulation.current_historical_time || '') }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Duration:</span>
+                    <span>{{ activeSimulation.duration_minutes }} minutes</span>
+                  </div>
+                  <div class="info-item">
+                    <span>Mode:</span>
+                    <span>{{ activeSimulation.is_competitive ? 'Competitive' : 'Practice' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Your Stats -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Your Performance</h3>
+              </div>
+              <div class="card-body">
+                <div class="stats-grid">
+                  <div class="stat-card">
+                    <span class="stat-label">Total Value</span>
+                    <span class="stat-value">{{ crisisService.formatCurrency(participantStats.current_total_value) }}</span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Return</span>
+                    <span class="stat-value" [style.color]="crisisService.getPnlColor(participantStats.total_return_pct)">
+                      {{ crisisService.formatPercentage(participantStats.total_return_pct) }}
+                    </span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Cash</span>
+                    <span class="stat-value">{{ crisisService.formatCurrency(participantStats.current_cash) }}</span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Active Trades</span>
+                    <span class="stat-value">{{ participantStats.active_positions }}</span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Total Trades</span>
+                    <span class="stat-value">{{ participantStats.total_trades }}</span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Win Rate</span>
+                    <span class="stat-value">
+                      {{ participantStats.total_trades > 0 ? ((participantStats.profitable_trades / participantStats.total_trades) * 100).toFixed(1) : 0 }}%
+                    </span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Max Drawdown</span>
+                    <span class="stat-value" style="color: #ef4444">
+                      {{ participantStats.max_drawdown_pct.toFixed(2) }}%
+                    </span>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-label">Sharpe Ratio</span>
+                    <span class="stat-value">{{ participantStats.sharpe_ratio?.toFixed(2) || 'N/A' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card" *ngIf="simulationTimeline.length > 0">
+              <div class="card-header">
+                <h3>Simulation Timeline</h3>
+              </div>
+              <div class="card-body">
+                <div class="timeline">
+                  <div *ngFor="let event of simulationTimeline" class="timeline-event">
+                    <div class="event-dot"></div>
+                    <div class="event-content">
+                      <div class="event-title">{{ event.phase }}</div>
+                      <div class="event-details">
+                        <span>Duration: {{ event.real_duration_minutes }} min</span>
+                        <span>Compression: {{ event.compression_ratio }}x</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Crisis Symbols Summary -->
+            <div class="card" *ngIf="crisisSymbols">
+              <div class="card-header">
+                <h3>Market Overview</h3>
+              </div>
+              <div class="card-body">
+                <div class="market-summary">
+                  <div class="summary-item">
+                    <span>Total Symbols:</span>
+                    <span>{{ crisisSymbols.total_symbols }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span>Historical Period:</span>
+                    <span>{{ crisisService.formatDate(crisisSymbols.date_range.start) }} - {{ crisisService.formatDate(crisisSymbols.date_range.end) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span>Duration:</span>
+                    <span>{{ crisisSymbols.date_range.duration_days }} days</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PARTICIPANTS TAB -->
+        <div *ngSwitchCase="'participants'" class="participants-tab">
+          <div class="participants-header">
+            <h3>Participants</h3>
+            <span class="participants-count">{{ participants.length }} Active</span>
+          </div>
+
+          <div class="participants-grid" *ngIf="participants.length > 0">
+            <div *ngFor="let participant of participants" 
+                 class="participant-card"
+                 [class.you]="participant.user_id === participantStats.user_id">
+              <div class="participant-header">
+                <div class="participant-avatar">
+                  {{ getUserInitial(participant.user_id) }}
+                </div>
+                <div class="participant-info">
+                  <span class="participant-name">User #{{ participant.user_id }}</span>
+                  <span class="participant-status" [class.active]="participant.is_active">
+                    {{ participant.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+                <span class="participant-rank" *ngIf="participant.final_rank">
+                  #{{ participant.final_rank }}
+                </span>
+              </div>
+              <div class="participant-stats">
+                <div class="stat-item">
+                  <span>Portfolio:</span>
+                  <span>{{ crisisService.formatCurrency(participant.current_total_value || 0) }}</span>
+                </div>
+                <div class="stat-item">
+                  <span>Return:</span>
+                  <span [style.color]="crisisService.getPnlColor(participant.total_return_pct)">
+                    {{ participant.total_return_pct.toFixed(2) }}%
+                  </span>
+                </div>
+                <div class="stat-item">
+                  <span>Trades:</span>
+                  <span>{{ participant.total_trades }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="participants.length === 0">
+            <div class="empty-icon">👥</div>
+            <h4>No Participants</h4>
+            <p>No participants have joined this simulation yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE SIMULATION - User HAS NOT JOINED YET -->
+    <div *ngIf="activeSimulation && (activeSimulation.status === 'active' || activeSimulation.status === 'ACTIVE') && !participantStats" class="join-section">
+      <div class="join-card">
+        <div class="join-header">
+          <div class="crisis-badge">
+            <span class="crisis-icon">{{ getCrisisIcon(activeSimulation.crisis_type) }}</span>
+            <div>
+              <h2>{{ crisisService.formatCrisisType(activeSimulation.crisis_type) }}</h2>
+              <span class="status-label active">🔥 Simulation in Progress</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="join-body">
+          <div class="simulation-info-grid">
+            <div class="info-card">
+              <div class="info-icon">📅</div>
+              <div>
+                <div class="info-label">Historical Period</div>
+                <div class="info-value">{{ crisisService.formatDate(activeSimulation.historical_start_date) }} - {{ crisisService.formatDate(activeSimulation.historical_end_date) }}</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">⏱</div>
+              <div>
+                <div class="info-label">Progress</div>
+                <div class="info-value">{{ simulationProgress }}%</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">👥</div>
+              <div>
+                <div class="info-label">Active Participants</div>
+                <div class="info-value">{{ activeSimulation.participant_count }} / {{ activeSimulation.max_participants }}</div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">🏆</div>
+              <div>
+                <div class="info-label">Mode</div>
+                <div class="info-value">{{ activeSimulation.is_competitive ? 'Competitive' : 'Practice' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- JOIN FORM FOR ACTIVE SIMULATION -->
+          <div class="join-status">
+            <h3>🚨 Late Entry Available</h3>
+            <p>This simulation is already in progress. You can still join, but you'll be starting late.</p>
+            
+  <!-- ADD THIS IF USER ALREADY JOINED -->
+  <div *ngIf="participantStats" class="already-joined-late">
+    <div class="joined-badge">
+      <span class="check-icon">✓</span>
+      <div>
+        <h4>You're Already Joined!</h4>
+        <p>You can enter the trading dashboard</p>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="goToTrading()">
+      <span>📈</span> Enter Trading
+    </button>
+  </div>
+            <div class="join-form">
+              <div class="form-group-inline">
+                <label>Starting Capital:</label>
+                <div class="input-group">
+                  <span class="input-prefix">$</span>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="joinForm.initialCash"
+                    min="10000"
+                    max="10000000"
+                    step="10000"
+                    class="form-control-lg"
+                    placeholder="100000">
+                </div>
+              </div>
+              
+              <button 
+                class="btn btn-primary btn-xl"
+                (click)="joinSimulation()"
+                [disabled]="activeSimulation.participant_count >= activeSimulation.max_participants">
+                <span class="btn-icon">🏃‍♂️</span>
+                <span>{{ activeSimulation.participant_count >= activeSimulation.max_participants ? 'Simulation Full' : 'Join Late' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Modal -->
+    <div class="modal-overlay" *ngIf="showOrderModal" (click)="showOrderModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Place Order</h3>
+          <button class="modal-close" (click)="showOrderModal = false">✖</button>
+        </div>
+        <div class="modal-body">
+          <div class="order-form">
+            <div class="form-row-pair">
+              <div class="form-group">
+                <label>Symbol</label>
+                <input type="text" [(ngModel)]="orderForm.symbol" readonly class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Side</label>
+                <select [(ngModel)]="orderForm.side" class="form-control">
+                  <option value="BUY">Buy</option>
+                  <option value="SELL">Sell</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row-pair">
+              <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" [(ngModel)]="orderForm.quantity" min="1" step="1" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Order Type</label>
+                <select [(ngModel)]="orderForm.order_type" class="form-control">
+                  <option value="MARKET">Market</option>
+                  <option value="LIMIT">Limit</option>
+                  <option value="STOP">Stop</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" *ngIf="orderForm.order_type === 'LIMIT'">
+              <label>Limit Price</label>
+              <input type="number" [(ngModel)]="orderForm.limit_price" step="0.01" class="form-control">
+            </div>
+
+            <div class="form-group" *ngIf="orderForm.order_type === 'STOP'">
+              <label>Stop Price</label>
+              <input type="number" [(ngModel)]="orderForm.stop_price" step="0.01" class="form-control">
+            </div>
+
+            <div class="order-summary-box" *ngIf="marketData">
+              <div class="summary-line">
+                <span>Current Price:</span>
+                <span>{{ crisisService.formatCurrency(marketData.current_price) }}</span>
+              </div>
+              <div class="summary-line">
+                <span>Estimated {{ orderForm.side === 'BUY' ? 'Cost' : 'Proceeds' }}:</span>
+                <span>{{ crisisService.formatCurrency(calculateEstimatedCost()) }}</span>
+              </div>
+              <div class="summary-line">
+                <span>Available Cash:</span>
+                <span>{{ crisisService.formatCurrency(participantStats?.current_cash || 0) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="showOrderModal = false; resetOrderForm()">Cancel</button>
+          <button class="btn btn-primary" (click)="placeOrder()">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

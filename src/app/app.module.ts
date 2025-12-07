@@ -41,7 +41,10 @@
   import { HttpClientModule } from '@angular/common/http';
   import { HTTP_INTERCEPTORS } from '@angular/common/http';
   import { AuthInterceptor } from 'src/app/core/interceptors/auth.service';
-
+import { CrisisSimulatorComponent } from './dashboard/crisis-simulator/crisis-simulator.component';
+import { CrisisAdminComponent } from './dashboard/crisis-admin/crisis-admin.component';
+import { CrisisTradingComponent } from './dashboard/crisis-trading/crisis-trading.component';
+import { tradingGuard } from './dashboard/crisis-simulator/trading.guard';  
 
 
   const routes: Routes = [
@@ -61,6 +64,13 @@
         { path: 'learning', component: LearningComponent },
         { path: 'game', component: GamificationComponent },
         { path: 'news', component: NewsComponent },
+        {path:'crisis-simulator', component: CrisisSimulatorComponent},
+        {path: 'crisis-admin',component: CrisisAdminComponent},
+        { 
+        path: 'crisis-simulator/trading',  // ADD THIS ROUTE
+        component: CrisisTradingComponent,
+        canActivate: [tradingGuard]  // PROTECT WITH GUARD
+      },
         { path: '', redirectTo: 'overview', pathMatch: 'full' }
       ]
     },
@@ -120,6 +130,9 @@
       MarketAiAgentComponent,
       NewsComponent,
       OverviewComponent,
+      CrisisSimulatorComponent,
+      CrisisAdminComponent,
+      CrisisTradingComponent,
     ],
     imports: [
       NgbModule,

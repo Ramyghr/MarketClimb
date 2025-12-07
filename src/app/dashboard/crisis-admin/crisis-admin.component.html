@@ -1,0 +1,434 @@
+<div class="admin-container">
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <!-- Success Message -->
+  <div class="success-banner" *ngIf="successMessage">
+    <span>✓ {{ successMessage }}</span>
+    <button (click)="successMessage = ''">✖</button>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-banner" *ngIf="errorMessage">
+    <span>{{ errorMessage }}</span>
+    <button (click)="errorMessage = ''">✖</button>
+  </div>
+
+  <!-- Header -->
+  <div class="admin-header">
+    <h1>🎮 Crisis Simulator Admin</h1>
+    <p class="subtitle">Manage simulations and monitor participant activity</p>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="admin-tabs">
+    <button 
+      [class.active]="activeView === 'overview'" 
+      (click)="setView('overview')">
+      📊 Overview
+    </button>
+    <button 
+      [class.active]="activeView === 'history'" 
+      (click)="setView('history')">
+      📜 History
+    </button>
+    <button 
+      [class.active]="activeView === 'create'" 
+      (click)="setView('create')">
+      ➕ Create Simulation
+    </button>
+    <button 
+      [class.active]="activeView === 'analytics'" 
+      (click)="setView('analytics')">
+      📈 Analytics
+    </button>
+  </div>
+
+  <!-- Overview Tab -->
+  <div class="admin-content" *ngIf="activeView === 'overview'">
+    <div class="stats-grid">
+      <div class="admin-stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-info">
+          <div class="stat-label">Total Simulations</div>
+          <div class="stat-value">{{ totalSimulations }}</div>
+        </div>
+      </div>
+
+      <div class="admin-stat-card">
+        <div class="stat-icon">🟢</div>
+        <div class="stat-info">
+          <div class="stat-label">Active Simulations</div>
+          <div class="stat-value">{{ activeSimulations }}</div>
+        </div>
+      </div>
+
+      <div class="admin-stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value">{{ completedSimulations }}</div>
+        </div>
+      </div>
+
+      <div class="admin-stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+          <div class="stat-label">Total Participants</div>
+          <div class="stat-value">{{ totalParticipants }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h3>Quick Actions</h3>
+      <div class="action-buttons">
+        <button class="btn-primary" (click)="setView('create')">
+          ➕ Create New Simulation
+        </button>
+        <button class="btn-secondary" (click)="refreshData()">
+          🔄 Refresh Data
+        </button>
+        <button class="btn-secondary" (click)="setView('history')">
+          📜 View History
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+      <h3>Recent Simulations</h3>
+      <div class="activity-list">
+        <div *ngFor="let sim of simulations.slice(0, 5)" class="activity-item">
+          <div class="activity-icon">{{ getCrisisTypeIcon(sim.crisis_type) }}</div>
+          <div class="activity-details">
+            <div class="activity-title">
+              {{ crisisService.formatCrisisType(sim.crisis_type) }}
+            </div>
+            <div class="activity-meta">
+              <span class="status-badge" [style.background]="getStatusColor(sim.status)">
+                {{ getStatusText(sim.status) }}
+              </span>
+              <span>{{ sim.participant_count }} participants</span>
+              <span>{{ crisisService.formatRelativeTime(sim.created_at) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="simulations.length === 0">
+          <p>No simulations yet</p>
+          <button class="btn-primary" (click)="setView('create')">Create Your First Simulation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div class="admin-content" *ngIf="activeView === 'history'">
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <label>Status</label>
+        <select [(ngModel)]="statusFilter" class="filter-select">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Crisis Type</label>
+        <select [(ngModel)]="crisisTypeFilter" class="filter-select">
+          <option value="">All Types</option>
+          <option *ngFor="let type of crisisTypes" [value]="type.type">
+            {{ type.name }}
+          </option>
+        </select>
+      </div>
+
+      <button class="btn-secondary" (click)="clearFilters()">
+        Clear Filters
+      </button>
+    </div>
+
+    <!-- Simulations List -->
+    <div class="simulations-list">
+      <div *ngFor="let sim of getFilteredSimulations()" class="simulation-card">
+        <div class="sim-card-header">
+          <div class="sim-title">
+            <span class="sim-icon">{{ getCrisisTypeIcon(sim.crisis_type) }}</span>
+            <div>
+              <h4>{{ crisisService.formatCrisisType(sim.crisis_type) }}</h4>
+              <span class="sim-id">ID: {{ sim.id }}</span>
+            </div>
+          </div>
+          <span class="status-badge" [style.background]="getStatusColor(sim.status)">
+            {{ getStatusText(sim.status) }}
+          </span>
+        </div>
+
+        <div class="sim-card-body">
+          <div class="sim-info-grid">
+            <div class="info-item">
+              <span class="info-label">Max Participants</span>
+              <span class="info-value">{{ sim.max_participants }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Participants</span>
+              <span class="info-value">{{ sim.participant_count }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Duration</span>
+              <span class="info-value">{{ formatDuration(sim.duration_minutes) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Created</span>
+              <span class="info-value">{{ formatDateTime(sim.created_at) }}</span>
+            </div>
+            <div class="info-item" *ngIf="sim.started_at">
+              <span class="info-label">Started</span>
+              <span class="info-value">{{ formatDateTime(sim.started_at) }}</span>
+            </div>
+            <div class="info-item" *ngIf="sim.completed_at">
+              <span class="info-label">Completed</span>
+              <span class="info-value">{{ formatDateTime(sim.completed_at) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-card-actions">
+          <!-- Pending Actions -->
+          <button 
+            *ngIf="sim.status === 'pending' || sim.status === 'PENDING'" 
+            class="btn-success-small"
+            (click)="startSimulation(sim.id)">
+            ▶️ Start
+          </button>
+          
+          <!-- Active Actions -->
+          <button 
+            *ngIf="sim.status === 'active' || sim.status === 'ACTIVE'" 
+            class="btn-warning-small"
+            (click)="pauseSimulation(sim.id)">
+            ⏸️ Pause
+          </button>
+          <button 
+            *ngIf="sim.status === 'active' || sim.status === 'ACTIVE'" 
+            class="btn-danger-small"
+            (click)="stopSimulation(sim.id)">
+            ⏹️ Stop
+          </button>
+          
+          <!-- Paused Actions -->
+          <button 
+            *ngIf="sim.status === 'paused' || sim.status === 'PAUSED'" 
+            class="btn-success-small"
+            (click)="resumeSimulation(sim.id)">
+            ▶️ Resume
+          </button>
+          <button 
+            *ngIf="sim.status === 'paused' || sim.status === 'PAUSED'" 
+            class="btn-danger-small"
+            (click)="stopSimulation(sim.id)">
+            ⏹️ Stop
+          </button>
+          
+          <!-- Common Actions -->
+          <button 
+            class="btn-secondary-small"
+            (click)="selectSimulation(sim.id)">
+            📊 View Details
+          </button>
+          <button 
+            class="btn-secondary-small"
+            (click)="exportSimulationData(sim.id)">
+            📥 Export
+          </button>
+          <button 
+            *ngIf="sim.status !== 'active' && sim.status !== 'ACTIVE' && 
+                   sim.status !== 'pending' && sim.status !== 'PENDING'" 
+            class="btn-danger-small"
+            (click)="deleteSimulation(sim.id)">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="getFilteredSimulations().length === 0">
+        <p>No simulations found matching your filters</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Tab -->
+  <div class="admin-content" *ngIf="activeView === 'create'">
+    <div class="create-form">
+      <h3>Create New Simulation</h3>
+
+      <div class="form-section">
+        <h4>Crisis Configuration</h4>
+        
+        <div class="form-group">
+          <label>Crisis Type *</label>
+          <select [(ngModel)]="createForm.crisis_type" class="form-control">
+            <option value="">Select a crisis...</option>
+            <option *ngFor="let type of crisisTypes" [value]="type.type">
+              {{ type.name }} ({{ type.date_range_start | date:'yyyy' }} - {{ type.date_range_end | date:'yyyy' }})
+            </option>
+          </select>
+        </div>
+
+        <div class="crisis-preview" *ngIf="createForm.crisis_type && getSelectedCrisisType()">
+          <div class="preview-content">
+            <h5>{{ crisisService.formatCrisisType(createForm.crisis_type) }}</h5>
+            <div class="preview-stats">
+              <span>Assets: {{ getSelectedCrisisType()?.asset_count }}</span>
+              <span>Duration: {{ getSelectedCrisisType()?.duration_days }} days</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Simulation Settings</h4>
+        
+        <div class="form-group">
+          <label>Max Participants *</label>
+          <input 
+            type="number" 
+            [(ngModel)]="createForm.max_participants"
+            min="1"
+            max="1000"
+            class="form-control">
+          <small>Maximum number of users who can join this simulation</small>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input 
+              type="checkbox" 
+              [(ngModel)]="createForm.is_competitive">
+            Competitive Mode (Enable leaderboard)
+          </label>
+          <small>Participants will compete for ranking on the leaderboard</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-secondary" (click)="resetCreateForm()">
+          Reset Form
+        </button>
+        <button class="btn-primary" (click)="createSimulation()" [disabled]="isLoading">
+          {{ isLoading ? 'Creating...' : 'Create Simulation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Tab -->
+  <div class="admin-content" *ngIf="activeView === 'analytics'">
+    <div class="analytics-section">
+      <h3>Simulation Analytics</h3>
+      
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <h4>Selected Simulation Stats</h4>
+          <div class="analytics-list" *ngIf="simulationStats">
+            <div class="analytics-item">
+              <span>Total Participants</span>
+              <span class="analytics-value">{{ simulationStats.total_participants }}</span>
+            </div>
+            <div class="analytics-item">
+              <span>Active Participants</span>
+              <span class="analytics-value">{{ simulationStats.active_participants }}</span>
+            </div>
+            <div class="analytics-item">
+              <span>Total Trades</span>
+              <span class="analytics-value">{{ simulationStats.total_trades }}</span>
+            </div>
+            <div class="analytics-item">
+              <span>Average Return</span>
+              <span class="analytics-value" [style.color]="simulationStats.average_return_pct >= 0 ? '#10b981' : '#ef4444'">
+                {{ formatPercentage(simulationStats.average_return_pct) }}
+              </span>
+            </div>
+            <div class="analytics-item">
+              <span>Best Return</span>
+              <span class="analytics-value" style="color: #10b981">
+                {{ formatPercentage(simulationStats.max_return_pct) }}
+              </span>
+            </div>
+            <div class="analytics-item">
+              <span>Worst Return</span>
+              <span class="analytics-value" style="color: #ef4444">
+                {{ formatPercentage(simulationStats.min_return_pct) }}
+              </span>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!simulationStats">
+            <p>Select a simulation to view stats</p>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <h4>Participant Performance</h4>
+          <div class="analytics-list" *ngIf="allParticipants.length > 0">
+            <div *ngFor="let participant of allParticipants.slice(0, 5)" class="analytics-item">
+              <span>User #{{ participant.user_id }}</span>
+              <span class="analytics-value" [style.color]="crisisService.getPnlColor(participant.total_return_pct)">
+                {{ formatPercentage(participant.total_return_pct) }}
+              </span>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="allParticipants.length === 0">
+            <p>No participants yet</p>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <h4>Popular Crisis Types</h4>
+          <div class="analytics-list">
+            <div *ngFor="let type of crisisTypes.slice(0, 5)" class="analytics-item">
+              <span>{{ type.name }}</span>
+              <span class="analytics-value">{{ type.asset_count }} assets</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <h4>Simulation Details</h4>
+          <div class="metrics-list" *ngIf="selectedSimulationId">
+            <div class="metric-row">
+              <span>Selected Simulation:</span>
+              <span>ID {{ selectedSimulationId }}</span>
+            </div>
+            <div class="metric-row" *ngIf="simulationStats">
+              <span>Status:</span>
+              <span [style.color]="getStatusColor(simulationStats.status)">
+                {{ getStatusText(simulationStats.status) }}
+              </span>
+            </div>
+            <div class="metric-row" *ngIf="simulationStats">
+              <span>Duration:</span>
+              <span>{{ formatDuration(simulationStats.duration_minutes) }}</span>
+            </div>
+            <div class="metric-row" *ngIf="simulationStats">
+              <span>Elapsed:</span>
+              <span>{{ simulationStats.elapsed_minutes.toFixed(1) }} min</span>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!selectedSimulationId">
+            <p>Select a simulation to view details</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
