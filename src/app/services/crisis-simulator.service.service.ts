@@ -3,7 +3,9 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import * as CrisisTypes from '../dashboard/crisis-simulator/crisis-simulator.interfaces';
-
+// ADD THESE IMPORTS IF NOT ALREADY PRESENT
+import { tap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
@@ -21,22 +23,16 @@ export class CrisisSimulatorServiceService {
   }
 
   // ============================================================================
-  // USER ENDPOINTS - EXACTLY MATCHING BACKEND
+  // USER ENDPOINTS
   // ============================================================================
 
-  /**
-   * GET /api/crisis-simulator/simulations/active
-   * Get currently active simulation
-   */
   getActiveSimulation(): Observable<CrisisTypes.Simulation | null> {
     return this.http.get<CrisisTypes.Simulation | null>(
       `${this.apiUrl}/simulations/active`,
       { headers: this.getHeaders() }
     );
   }
-  /**
-   * Get order status badge color
-   */
+
   getOrderStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
       'PENDING': '#f59e0b',
@@ -47,10 +43,7 @@ export class CrisisSimulatorServiceService {
     };
     return colors[status] || '#6b7280';
   }
-  /**
-   * POST /api/crisis-simulator/simulations/{simulation_id}/join
-   * Join a pending simulation
-   */
+
   joinSimulation(simulationId: number, initialCash: number = 100000): Observable<any> {
     const joinRequest = {
       initial_cash: initialCash
@@ -65,10 +58,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * DELETE /api/crisis-simulator/simulations/{simulation_id}/leave
-   * Leave a pending simulation
-   */
   leaveSimulation(simulationId: number): Observable<any> {
     return this.http.delete(
       `${this.apiUrl}/simulations/${simulationId}/leave`,
@@ -76,10 +65,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/crisis-types
-   * Get list of all available crisis types
-   */
   getCrisisTypes(): Observable<any[]> {
     return this.http.get<any[]>(
       `${this.apiUrl}/crisis-types`,
@@ -87,35 +72,27 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * POST /api/crisis-simulator/orders
-   * Place an order during active simulation
-   */
   placeOrder(order: CrisisTypes.PlaceOrderRequest): Observable<any> {
-    const formData = new FormData();
-    formData.append('symbol', order.symbol);
-    formData.append('side', order.side);
-    formData.append('quantity', order.quantity.toString());
-    formData.append('order_type', order.order_type);
-    
-    if (order.limit_price !== null && order.limit_price !== undefined) {
-      formData.append('limit_price', order.limit_price.toString());
-    }
-    if (order.stop_price !== null && order.stop_price !== undefined) {
-      formData.append('stop_price', order.stop_price.toString());
-    }
+    const jsonOrder = {
+      symbol: order.symbol,
+      side: order.side,
+      quantity: order.quantity,
+      order_type: order.order_type,
+      limit_price: order.limit_price,
+      stop_price: order.stop_price
+    };
+
+    console.log('📤 Sending JSON order:', JSON.stringify(jsonOrder, null, 2));
 
     return this.http.post<any>(
       `${this.apiUrl}/orders`,
-      formData,
-      { headers: this.getHeaders() }
+      jsonOrder,
+      { 
+        headers: this.getHeaders().set('Content-Type', 'application/json')
+      }
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/orders
-   * Get order history
-   */
   getOrders(statusFilter?: string, limit: number = 50): Observable<any[]> {
     let params = new HttpParams().set('limit', limit.toString());
     if (statusFilter) {
@@ -128,28 +105,32 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * POST /api/crisis-simulator/positions/{position_id}/close
-   * Close an open position (full or partial)
-   */
-  closePosition(positionId: number, quantity?: number): Observable<any> {
-    let params = new HttpParams();
-    if (quantity) {
-      params = params.set('quantity', quantity.toString());
-    }
-
-    return this.http.post<any>(
-      `${this.apiUrl}/positions/${positionId}/close`,
-      {},
-      { headers: this.getHeaders(), params }
-    );
-  }
+  // /**
+  //  * POST /api/crisis-simulator/positions/{order_id}/close
+  //  * Close an open position using ORDER ID
+  //  */
+  // closePosition(orderId: number, quantity?: number): Observable<any> {
+  //   console.log('🔄 Service: Closing position for order ID:', orderId);
+    
+  //   let params = new HttpParams();
+  //   if (quantity) {
+  //     params = params.set('quantity', quantity.toString());
+  //   }
+    
+  //   return this.http.post<any>(
+  //     `${this.apiUrl}/positions/${orderId}/close`,
+  //     {},
+  //     { headers: this.getHeaders(), params }
+  //   );
+  // }
 
   /**
    * POST /api/crisis-simulator/positions/close-all
    * Close all open positions at once
    */
   closeAllPositions(): Observable<any> {
+    console.log('🔄 Service: Closing all positions');
+    
     return this.http.post(
       `${this.apiUrl}/positions/close-all`,
       {},
@@ -157,10 +138,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/market-data/{symbol}
-   * Get current market data for a symbol
-   */
   getMarketData(symbol: string): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}/market-data/${symbol}`,
@@ -168,10 +145,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/leaderboard
-   * Get current leaderboard
-   */
   getLeaderboard(limit: number = 50): Observable<any> {
     const params = new HttpParams().set('limit', limit.toString());
     
@@ -181,10 +154,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/my-stats
-   * Get detailed participant statistics
-   */
   getMyStats(): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}/my-stats`,
@@ -192,10 +161,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * DELETE /api/crisis-simulator/orders/{order_id}
-   * Cancel a pending order
-   */
   cancelOrder(orderId: number): Observable<any> {
     return this.http.delete(
       `${this.apiUrl}/orders/${orderId}`,
@@ -203,10 +168,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/crisis/{crisis_type}/symbols
-   * Get detailed symbol information for a crisis
-   */
   getCrisisSymbols(crisisType: string): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}/crisis/${crisisType}/symbols`,
@@ -214,10 +175,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/assets/{crisis_type}
-   * Get available assets for a specific crisis type
-   */
   getAssets(crisisType: string): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}/assets/${crisisType}`,
@@ -225,10 +182,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/participants
-   * Get list of all participants in a simulation
-   */
   getParticipants(simulationId?: number): Observable<any[]> {
     let params = new HttpParams();
     if (simulationId) {
@@ -240,11 +193,40 @@ export class CrisisSimulatorServiceService {
       { headers: this.getHeaders(), params }
     );
   }
+// ADD TO CrisisSimulatorServiceService:
 
-  /**
-   * GET /api/crisis-simulator/simulation/{simulation_id}/timeline
-   * Get timeline of major events during a simulation
-   */
+/**
+ * GET /api/crisis-simulator/positions
+ * Get all open positions from backend
+ */
+getMyPositions(): Observable<any[]> {
+  console.log('🔄 Service: Fetching positions from backend');
+  
+  return this.http.get<any[]>(
+    `${this.apiUrl}/positions`,
+    { headers: this.getHeaders() }
+  ).pipe(
+    tap(positions => console.log('✅ Positions received:', positions?.length || 0))
+  );
+}
+
+/**
+ * Enhanced closePosition - Use position_id
+ */
+closePosition(positionId: number, quantity?: number): Observable<any> {
+  console.log('🔄 Service: Closing position ID:', positionId);
+  
+  let params = new HttpParams();
+  if (quantity) {
+    params = params.set('quantity', quantity.toString());
+  }
+  
+  return this.http.post<any>(
+    `${this.apiUrl}/positions/${positionId}/close`,
+    {},
+    { headers: this.getHeaders(), params }
+  );
+}
   getSimulationTimeline(simulationId: number): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}/simulation/${simulationId}/timeline`,
@@ -252,10 +234,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /api/crisis-simulator/health
-   * Get crisis simulator health status
-   */
   getHealth(): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}/health`,
@@ -264,13 +242,9 @@ export class CrisisSimulatorServiceService {
   }
 
   // ============================================================================
-  // ADMIN ENDPOINTS - EXACTLY MATCHING BACKEND
+  // ADMIN ENDPOINTS
   // ============================================================================
 
-  /**
-   * POST /admin/simulations
-   * Create a new crisis simulation (Admin only)
-   */
   createSimulation(crisisType: string, maxParticipants: number, isCompetitive: boolean = false): Observable<any> {
     const formData = new FormData();
     formData.append('crisis_type', crisisType);
@@ -284,10 +258,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * POST /admin/simulations/{simulation_id}/start
-   * Start a pending simulation (Admin only)
-   */
   startSimulation(simulationId: number): Observable<any> {
     return this.http.post(
       `${this.adminApiUrl}/simulations/${simulationId}/start`,
@@ -296,10 +266,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * POST /admin/simulations/{simulation_id}/stop
-   * Stop a running simulation immediately (Admin only)
-   */
   stopSimulation(simulationId: number, force: boolean = false): Observable<any> {
     const params = new HttpParams().set('force', force.toString());
     
@@ -310,10 +276,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * POST /admin/simulations/{simulation_id}/pause
-   * Pause an active simulation (Admin only)
-   */
   pauseSimulation(simulationId: number): Observable<any> {
     return this.http.post(
       `${this.adminApiUrl}/simulations/${simulationId}/pause`,
@@ -322,10 +284,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * POST /admin/simulations/{simulation_id}/resume
-   * Resume a paused simulation (Admin only)
-   */
   resumeSimulation(simulationId: number): Observable<any> {
     return this.http.post(
       `${this.adminApiUrl}/simulations/${simulationId}/resume`,
@@ -334,10 +292,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * DELETE /admin/simulations/{simulation_id}
-   * Delete a simulation and all its data (Admin only)
-   */
   deleteSimulation(simulationId: number): Observable<any> {
     return this.http.delete(
       `${this.adminApiUrl}/simulations/${simulationId}`,
@@ -345,10 +299,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /admin/simulations/history
-   * Get history of all simulations (Admin only)
-   */
   getSimulationHistory(limit: number = 10, offset: number = 0, status?: string, crisisType?: string): Observable<any[]> {
     let params = new HttpParams()
       .set('limit', limit.toString())
@@ -367,10 +317,6 @@ export class CrisisSimulatorServiceService {
     );
   }
 
-  /**
-   * GET /admin/simulations/{simulation_id}/stats
-   * Get detailed statistics for a simulation (Admin only)
-   */
   getSimulationStats(simulationId: number): Observable<any> {
     return this.http.get<any>(
       `${this.adminApiUrl}/simulations/${simulationId}/stats`,
@@ -379,43 +325,9 @@ export class CrisisSimulatorServiceService {
   }
 
   // ============================================================================
-  // POLLING / AUTO-REFRESH METHODS
+  // UTILITY METHODS
   // ============================================================================
 
-  /**
-   * Auto-refresh stats every N seconds
-   */
-  autoRefreshStats(intervalSeconds: number = 2): Observable<any> {
-    return interval(intervalSeconds * 1000).pipe(
-      switchMap(() => this.getMyStats())
-    );
-  }
-
-  /**
-   * Auto-refresh leaderboard
-   */
-  autoRefreshLeaderboard(intervalSeconds: number = 5): Observable<any> {
-    return interval(intervalSeconds * 1000).pipe(
-      switchMap(() => this.getLeaderboard())
-    );
-  }
-
-  /**
-   * Auto-refresh market data for symbol
-   */
-  autoRefreshMarketData(symbol: string, intervalSeconds: number = 1): Observable<any> {
-    return interval(intervalSeconds * 1000).pipe(
-      switchMap(() => this.getMarketData(symbol))
-    );
-  }
-
-  // ============================================================================
-  // UTILITY METHODS (keep as they are)
-  // ============================================================================
-
-  /**
-   * Format crisis type for display
-   */
   formatCrisisType(crisisType: string): string {
     return crisisType.replace(/_/g, ' ')
       .split(' ')
@@ -423,9 +335,6 @@ export class CrisisSimulatorServiceService {
       .join(' ');
   }
 
-  /**
-   * Get crisis type color
-   */
   getCrisisTypeColor(crisisType: string): string {
     const colors: { [key: string]: string } = {
       'great_depression': '#8b4513',
@@ -439,18 +348,12 @@ export class CrisisSimulatorServiceService {
     return colors[crisisType] || '#666666';
   }
 
-  /**
-   * Calculate profit/loss color
-   */
   getPnlColor(value: number): string {
-    if (value > 0) return '#10b981'; // green
-    if (value < 0) return '#ef4444'; // red
-    return '#6b7280'; // gray
+    if (value > 0) return '#10b981';
+    if (value < 0) return '#ef4444';
+    return '#6b7280';
   }
 
-  /**
-   * Format currency
-   */
   formatCurrency(value: number): string {
     if (value === null || value === undefined) return '$0.00';
     
@@ -462,9 +365,6 @@ export class CrisisSimulatorServiceService {
     }).format(value);
   }
 
-  /**
-   * Format large currency (with K, M, B suffixes)
-   */
   formatLargeCurrency(value: number): string {
     if (value === null || value === undefined) return '$0';
     
@@ -480,9 +380,6 @@ export class CrisisSimulatorServiceService {
     return this.formatCurrency(value);
   }
 
-  /**
-   * Format percentage
-   */
   formatPercentage(value: number): string {
     if (value === null || value === undefined) return '0.00%';
     
@@ -490,9 +387,6 @@ export class CrisisSimulatorServiceService {
     return `${sign}${value.toFixed(2)}%`;
   }
 
-  /**
-   * Format date/time
-   */
   formatDateTime(dateString: string): string {
     if (!dateString) return 'N/A';
     
@@ -505,9 +399,6 @@ export class CrisisSimulatorServiceService {
     });
   }
 
-  /**
-   * Format date only
-   */
   formatDate(dateString: string): string {
     if (!dateString) return 'N/A';
     
@@ -518,9 +409,6 @@ export class CrisisSimulatorServiceService {
     });
   }
 
-  /**
-   * Format relative time
-   */
   formatRelativeTime(dateString: string): string {
     if (!dateString) return 'N/A';
     
@@ -544,9 +432,6 @@ export class CrisisSimulatorServiceService {
     });
   }
 
-  /**
-   * Validate order parameters
-   */
   validateOrder(order: CrisisTypes.PlaceOrderRequest): { valid: boolean; message?: string } {
     if (!order.symbol || order.symbol.trim() === '') {
       return { valid: false, message: 'Symbol is required' };

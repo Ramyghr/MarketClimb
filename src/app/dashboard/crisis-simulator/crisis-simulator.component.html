@@ -498,83 +498,254 @@
             </div>
           </div>
         </div>
+<!-- ORDERS TAB - COMPLETELY FIXED -->
+<div *ngSwitchCase="'orders'" class="orders-tab">
+  
+  <!-- Header with Controls -->
+  <div class="orders-header">
+    <div class="orders-header-left">
+      <h3>Order History & Positions</h3>
+      <span class="badge badge-info" *ngIf="hasOpenPositions()">
+        {{ getOpenPositionCount() }} Open Position{{ getOpenPositionCount() !== 1 ? 's' : '' }}
+      </span>
+    </div>
+    <div class="orders-controls">
+      <!-- Close All Positions Button - Only show when 2+ positions -->
+      <button 
+        class="btn btn-danger btn-sm" 
+        (click)="closeAllPositions()"
+        *ngIf="getOpenPositionCount() > 1"
+        [disabled]="isLoading">
+        <span>⚠</span> Close ALL {{ getOpenPositionCount() }} Positions
+      </button>
+      
+      <!-- Filter -->
+      <select 
+        [(ngModel)]="orderStatusFilter" 
+        (change)="loadOrders(orderStatusFilter)" 
+        class="filter-select">
+        <option value="">All Orders</option>
+        <option value="PENDING">Pending</option>
+        <option value="FILLED">Filled</option>
+        <option value="PARTIAL">Partial</option>
+        <option value="CANCELLED">Cancelled</option>
+        <option value="REJECTED">Rejected</option>
+      </select>
+      
+      <!-- Refresh Button -->
+      <button class="btn btn-secondary btn-sm" (click)="loadOrders()">
+        <span>🔄</span> Refresh
+      </button>
+    </div>
+  </div>
 
-        <!-- ORDERS TAB -->
-        <div *ngSwitchCase="'orders'" class="orders-tab">
-          <div class="orders-header">
-            <h3>Order History</h3>
-            <div class="orders-controls">
-              <select [(ngModel)]="orderStatusFilter" (change)="loadOrders(orderStatusFilter)" class="filter-select">
-                <option value="">All Orders</option>
-                <option value="pending">Pending</option>
-                <option value="filled">Filled</option>
-                <option value="partial">Partial</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="rejected">Rejected</option>
-              </select>
-              <button class="btn btn-secondary" (click)="loadOrders()">
-                <span>🔄</span> Refresh
-              </button>
-            </div>
+  <!-- Open Positions Summary Card - Only shows when positions exist -->
+  <div class="positions-summary-card" *ngIf="hasOpenPositions()">
+    <div class="card">
+      <div class="card-header">
+        <div class="summary-header-content">
+          <div>
+            <h4>📊 Open Positions Summary</h4>
+            <span class="badge badge-success">{{ getOpenPositionCount() }} Active</span>
           </div>
-
-          <div class="orders-table" *ngIf="orders.length > 0">
-            <table>
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Symbol</th>
-                  <th>Type</th>
-                  <th>Side</th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let order of orders">
-                  <td>{{ crisisService.formatRelativeTime(order.placed_at_historical) }}</td>
-                  <td><strong>{{ order.symbol }}</strong></td>
-                  <td>{{ getOrderTypeDisplay(order.order_type) }}</td>
-                  <td>
-                    <span class="side-badge" [class.buy]="order.side === 'BUY'" [class.sell]="order.side === 'SELL'">
-                      {{ order.side }}
-                    </span>
-                  </td>
-                  <td>{{ order.quantity }}</td>
-                  <td>
-                    <span *ngIf="order.filled_price">${{ order.filled_price.toFixed(2) }}</span>
-                    <span *ngIf="!order.filled_price && order.limit_price">Limit: ${{ order.limit_price?.toFixed(2) }}</span>
-                    <span *ngIf="!order.filled_price && !order.limit_price">Market</span>
-                  </td>
-                  <td>
-                    <span class="status-badge" [style.background]="getStatusColor(order.status)">
-                      {{ order.status }}
-                    </span>
-                  </td>
-                  <td>
-                    <button *ngIf="order.status === 'pending'" 
-                            class="btn btn-sm btn-danger" 
-                            (click)="cancelOrder(order.id)">
-                      Cancel
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <button 
+            class="btn btn-sm btn-danger" 
+            (click)="closeAllPositions()"
+            *ngIf="getOpenPositionCount() > 1"
+            [disabled]="isLoading">
+            <span>✖</span> Close All
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        
+        <!-- Summary Stats -->
+        <div class="positions-summary">
+          <div class="summary-row">
+            <span class="summary-label">Active Positions:</span>
+            <strong class="summary-value">{{ getOpenPositionCount() }}</strong>
           </div>
-
-          <div class="empty-state" *ngIf="orders.length === 0">
-            <div class="empty-icon">📋</div>
-            <h4>No Orders Yet</h4>
-            <p>Your order history will appear here once you start trading</p>
-            <button class="btn btn-primary" (click)="setActiveTab('trading')">
-              Start Trading
-            </button>
+          <div class="summary-row">
+            <span class="summary-label">Portfolio Value:</span>
+            <strong class="summary-value">
+              {{ formatCurrency(participantStats?.current_portfolio_value || 0) }}
+            </strong>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Unrealized P&L:</span>
+            <strong 
+              class="summary-value" 
+              [style.color]="crisisService.getPnlColor(getTotalUnrealizedPnl())">
+              {{ formatCurrency(getTotalUnrealizedPnl()) }}
+            </strong>
           </div>
         </div>
+        
+        <!-- Open Positions Grid -->
+        <div class="open-positions-grid">
+          <div *ngFor="let position of getOpenPositions()" class="position-card">
+            <div class="position-card-header">
+              <div class="position-symbol-info">
+                <span class="position-symbol-large">{{ position.symbol }}</span>
+                <span 
+                  class="position-side-badge" 
+                  [class.buy-badge]="position.side === 'BUY'" 
+                  [class.sell-badge]="position.side === 'SELL'">
+                  {{ position.side }}
+                </span>
+                <!-- Show if being closed -->
+                <span class="badge badge-warning" *ngIf="isPositionClosing(position)">
+                  Closing...
+                </span>
+              </div>
+              <button 
+                class="btn-close-position" 
+                (click)="closeSinglePosition(position)"
+                [disabled]="isLoading || isPositionClosing(position)"
+                title="Close this position">
+                ✖
+              </button>
+            </div>
+            <div class="position-card-body">
+              <div class="position-detail">
+                <span class="detail-label">Quantity:</span>
+                <span class="detail-value">{{ position.quantity }}</span>
+              </div>
+              <div class="position-detail">
+                <span class="detail-label">Entry Price:</span>
+                <span class="detail-value">${{ position.filled_price?.toFixed(2) || 'N/A' }}</span>
+              </div>
+              <div class="position-detail">
+                <span class="detail-label">Filled At:</span>
+                <span class="detail-value">{{ formatRelativeTime(position.filled_at_historical || position.placed_at_historical) }}</span>
+              </div>
+              <div class="position-detail">
+                <span class="detail-label">Order ID:</span>
+                <span class="detail-value">#{{ position.id }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
 
+  <!-- Orders Table -->
+  <div class="orders-table-container" *ngIf="orders.length > 0">
+    <h4 class="section-title">All Orders</h4>
+    <div class="orders-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th>Side</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Position</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orders" 
+              [class.highlight-open]="isPositionOpen(order)"
+              [class.highlight-closing]="isPositionClosing(order)">
+            <td>{{ formatRelativeTime(order.placed_at_historical) }}</td>
+            <td><strong>{{ order.symbol }}</strong></td>
+            <td>{{ getOrderTypeDisplay(order.order_type) }}</td>
+            <td>
+              <span 
+                class="side-badge" 
+                [class.buy]="order.side === 'BUY'" 
+                [class.sell]="order.side === 'SELL'">
+                {{ order.side }}
+              </span>
+            </td>
+            <td>{{ order.quantity }}</td>
+            <td>
+              <span *ngIf="order.filled_price">${{ order.filled_price.toFixed(2) }}</span>
+              <span *ngIf="!order.filled_price && order.limit_price">
+                Limit: ${{ order.limit_price?.toFixed(2) }}
+              </span>
+              <span *ngIf="!order.filled_price && !order.limit_price">Market</span>
+            </td>
+            <td>
+              <span class="status-badge" [style.background]="getStatusColor(order.status)">
+                {{ order.status }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="isPositionOpen(order)" class="status-badge open-position">
+    OPEN ({{ getPositionFromBackend(order.symbol)?.quantity || 0 }} shares)
+    </span>
+  <span *ngIf="isPositionClosing(order)" class="status-badge closing-position">
+    CLOSING
+  </span>
+  <span *ngIf="!isPositionOpen(order) && !isPositionClosing(order) && order.status === 'FILLED'" 
+        class="status-badge closed-position">
+    CLOSED
+  </span>
+  <span *ngIf="order.status !== 'FILLED'" class="status-badge neutral-position">
+    -
+  </span>
+            </td>
+            
+            <td>
+              <div class="order-actions">
+                <!-- Cancel pending orders -->
+                <button 
+                  *ngIf="order.status === 'PENDING'" 
+                  class="btn btn-sm btn-danger" 
+                  (click)="cancelOrder(order.id)"
+                  [disabled]="isLoading">
+                  Cancel
+                </button>
+                
+                <!-- Close open positions -->
+                <button 
+                  *ngIf="isPositionOpen(order)"
+                  class="btn btn-sm btn-warning"
+                  (click)="closeSinglePosition(order)"
+                  [disabled]="isLoading || isPositionClosing(order)"
+                  title="Close this position">
+                  <span>✖</span> Close
+                </button>
+                
+                <!-- Show status for closing positions -->
+                <span 
+                  *ngIf="isPositionClosing(order)" 
+                  class="closing-text">
+                  Closing...
+                </span>
+                
+                <!-- No action available -->
+                <span 
+                  *ngIf="!isPositionOpen(order) && !isPositionClosing(order) && order.status !== 'PENDING'" 
+                  class="no-action">
+                  -
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="orders.length === 0">
+    <div class="empty-icon">📋</div>
+    <h4>No Orders Yet</h4>
+    <p>Your order history will appear here once you start trading</p>
+    <button class="btn btn-primary" (click)="setActiveTab('trading')">
+      Start Trading
+    </button>
+  </div>
+  
+</div>
         <!-- LEADERBOARD TAB -->
         <div *ngSwitchCase="'leaderboard'" class="leaderboard-tab">
           <div class="leaderboard-header">
@@ -979,12 +1150,22 @@
 
             <div class="form-group" *ngIf="orderForm.order_type === 'LIMIT'">
               <label>Limit Price</label>
-              <input type="number" [(ngModel)]="orderForm.limit_price" step="0.01" class="form-control">
+              <input 
+                type="number" 
+                [(ngModel)]="orderForm.limit_price" 
+                step="0.01" 
+                class="form-control"
+                (change)="orderForm.stop_price = null">
             </div>
 
             <div class="form-group" *ngIf="orderForm.order_type === 'STOP'">
               <label>Stop Price</label>
-              <input type="number" [(ngModel)]="orderForm.stop_price" step="0.01" class="form-control">
+              <input 
+                type="number" 
+                [(ngModel)]="orderForm.stop_price" 
+                step="0.01" 
+                class="form-control"
+                (change)="orderForm.limit_price = null">
             </div>
 
             <div class="order-summary-box" *ngIf="marketData">

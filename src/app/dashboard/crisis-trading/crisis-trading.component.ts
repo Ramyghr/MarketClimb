@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { CrisisSimulatorStateService } from '../../services/crisis-simulator-state.service';
 import { CrisisSimulatorServiceService } from '../../services/crisis-simulator.service.service';
 import * as CrisisTypes from '../crisis-simulator/crisis-simulator.interfaces';
@@ -12,6 +13,9 @@ import * as CrisisTypes from '../crisis-simulator/crisis-simulator.interfaces';
 })
 export class CrisisTradingComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
+  private marketDataRefreshSubscription?: Subscription;
+  private statsRefreshSubscription?: Subscription;
+  private leaderboardRefreshSubscription?: Subscription;
 
   // State from service
   activeSimulation: CrisisTypes.Simulation | null = null;
@@ -94,6 +98,9 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
         this.selectedSymbol = symbol;
         if (symbol) {
           this.orderForm.symbol = symbol.symbol;
+          this.startMarketDataRefresh(symbol.symbol);
+        } else {
+          this.stopMarketDataRefresh();
         }
       }),
       
@@ -113,14 +120,104 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
     // Load initial data
     this.stateService.loadOrders();
     this.stateService.loadLeaderboard();
+
+    // Start auto-refresh for stats and leaderboard
+    this.startStatsRefresh();
+    this.startLeaderboardRefresh();
   }
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.stopMarketDataRefresh();
+    this.stopStatsRefresh();
+    this.stopLeaderboardRefresh();
   }
 
   // ============================================================================
-  // TRADING ACTIONS
+  // AUTO-REFRESH MECHANISMS - NEW
+  // ============================================================================
+
+  private startMarketDataRefresh(symbol: string) {
+    this.stopMarketDataRefresh();
+    
+    // Refresh market data every 2 seconds
+    this.marketDataRefreshSubscription = interval(2000).pipe(
+      switchMap(() => this.crisisService.getMarketData(symbol))
+    ).subscribe({
+      next: (data) => {
+        this.stateService.updateMarketData(data);
+      },
+      error: (error) => {
+        console.error('Error refreshing market data:', error);
+      }
+    });
+
+    // Initial load
+    this.crisisService.getMarketData(symbol).subscribe({
+      next: (data) => {
+        this.stateService.updateMarketData(data);
+      },
+      error: (error) => {
+        console.error('Error loading market data:', error);
+      }
+    });
+  }
+
+  private stopMarketDataRefresh() {
+    if (this.marketDataRefreshSubscription) {
+      this.marketDataRefreshSubscription.unsubscribe();
+      this.marketDataRefreshSubscription = undefined;
+    }
+  }
+
+  private startStatsRefresh() {
+    this.stopStatsRefresh();
+    
+    // Refresh participant stats every 3 seconds
+    this.statsRefreshSubscription = interval(3000).pipe(
+      switchMap(() => this.crisisService.getMyStats())
+    ).subscribe({
+      next: (stats) => {
+        this.stateService.updateParticipantStats(stats);
+      },
+      error: (error) => {
+        console.error('Error refreshing stats:', error);
+      }
+    });
+  }
+
+  private stopStatsRefresh() {
+    if (this.statsRefreshSubscription) {
+      this.statsRefreshSubscription.unsubscribe();
+      this.statsRefreshSubscription = undefined;
+    }
+  }
+
+  private startLeaderboardRefresh() {
+    this.stopLeaderboardRefresh();
+    
+    // Refresh leaderboard every 5 seconds
+    this.leaderboardRefreshSubscription = interval(5000).pipe(
+      switchMap(() => this.crisisService.getLeaderboard())
+    ).subscribe({
+      next: (leaderboard) => {
+        this.stateService.updateLeaderboard(leaderboard);
+      },
+      error: (error) => {
+        console.error('Error refreshing leaderboard:', error);
+      }
+    });
+  }
+
+  private stopLeaderboardRefresh() {
+    if (this.leaderboardRefreshSubscription) {
+      this.leaderboardRefreshSubscription.unsubscribe();
+      this.leaderboardRefreshSubscription = undefined;
+    }
+  }
+
+  // ============================================================================
+  // TRADING ACTIONS - ENHANCED
   // ============================================================================
 
   openOrderModal() {
@@ -154,6 +251,14 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
         this.resetOrderForm();
         this.successMessage = 'Order placed successfully!';
         setTimeout(() => this.successMessage = '', 3000);
+        
+        // Refresh orders and stats immediately after placing order
+        this.stateService.loadOrders(this.orderStatusFilter);
+        this.crisisService.getMyStats().subscribe({
+          next: (stats) => {
+            this.stateService.updateParticipantStats(stats);
+          }
+        });
       },
       error: () => {
         // Error handled by state service
@@ -217,6 +322,9 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
       next: () => {
         this.successMessage = 'Order cancelled successfully';
         setTimeout(() => this.successMessage = '', 3000);
+        
+        // Refresh orders immediately
+        this.stateService.loadOrders(this.orderStatusFilter);
       },
       error: () => {
         // Error handled by state service
@@ -225,12 +333,14 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
   }
 
   // ============================================================================
-  // SYMBOL SELECTION
+  // SYMBOL SELECTION - ENHANCED
   // ============================================================================
 
   selectSymbol(symbol: CrisisTypes.SymbolInfo) {
     this.stateService.selectSymbol(symbol);
     this.showSymbolSelector = false;
+    
+    // Market data refresh will start automatically via the selectedSymbol$ subscription
   }
 
   toggleSymbolSelector() {
@@ -238,7 +348,7 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
   }
 
   // ============================================================================
-  // TAB NAVIGATION
+  // TAB NAVIGATION - ENHANCED
   // ============================================================================
 
   setActiveTab(tab: 'trading' | 'orders' | 'leaderboard' | 'portfolio') {
@@ -248,6 +358,13 @@ export class CrisisTradingComponent implements OnInit, OnDestroy {
       this.stateService.loadOrders(this.orderStatusFilter);
     } else if (tab === 'leaderboard') {
       this.stateService.loadLeaderboard();
+    } else if (tab === 'portfolio') {
+      // Refresh stats when viewing portfolio
+      this.crisisService.getMyStats().subscribe({
+        next: (stats) => {
+          this.stateService.updateParticipantStats(stats);
+        }
+      });
     }
   }
 

@@ -1,13 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { CrisisSimulatorServiceService } from './crisis-simulator.service.service';
 import * as CrisisTypes from '../dashboard/crisis-simulator/crisis-simulator.interfaces';
 
-/**
- * Centralized state management service for Crisis Simulator
- * Manages shared data between overview and trading components
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -15,8 +11,8 @@ export class CrisisSimulatorStateService {
   // State subjects
   private activeSimulationSubject = new BehaviorSubject<CrisisTypes.Simulation | null>(null);
   private participantStatsSubject = new BehaviorSubject<CrisisTypes.ParticipantStats | null>(null);
-  private leaderboardSubject = new BehaviorSubject<CrisisTypes.Leaderboard | null>(null);
   private ordersSubject = new BehaviorSubject<CrisisTypes.Order[]>([]);
+  private leaderboardSubject = new BehaviorSubject<CrisisTypes.Leaderboard | null>(null);
   private crisisSymbolsSubject = new BehaviorSubject<CrisisTypes.CrisisSymbolsResponse | null>(null);
   private selectedSymbolSubject = new BehaviorSubject<CrisisTypes.SymbolInfo | null>(null);
   private marketDataSubject = new BehaviorSubject<CrisisTypes.MarketData | null>(null);
@@ -24,24 +20,28 @@ export class CrisisSimulatorStateService {
   private errorSubject = new BehaviorSubject<string>('');
 
   // Public observables
-  public activeSimulation$ = this.activeSimulationSubject.asObservable();
-  public participantStats$ = this.participantStatsSubject.asObservable();
-  public leaderboard$ = this.leaderboardSubject.asObservable();
-  public orders$ = this.ordersSubject.asObservable();
-  public crisisSymbols$ = this.crisisSymbolsSubject.asObservable();
-  public selectedSymbol$ = this.selectedSymbolSubject.asObservable();
-  public marketData$ = this.marketDataSubject.asObservable();
-  public isLoading$ = this.isLoadingSubject.asObservable();
-  public error$ = this.errorSubject.asObservable();
-
-  // Auto-refresh subscriptions
-  private refreshSubscriptions: Subscription[] = [];
+  activeSimulation$ = this.activeSimulationSubject.asObservable();
+  participantStats$ = this.participantStatsSubject.asObservable();
+  orders$ = this.ordersSubject.asObservable();
+  leaderboard$ = this.leaderboardSubject.asObservable();
+  crisisSymbols$ = this.crisisSymbolsSubject.asObservable();
+  selectedSymbol$ = this.selectedSymbolSubject.asObservable();
+  marketData$ = this.marketDataSubject.asObservable();
+  isLoading$ = this.isLoadingSubject.asObservable();
+  error$ = this.errorSubject.asObservable();
 
   constructor(private crisisService: CrisisSimulatorServiceService) {}
 
   // ============================================================================
-  // STATE GETTERS
+  // GETTERS
   // ============================================================================
+
+  get canTrade(): boolean {
+    const simulation = this.activeSimulationSubject.value;
+    const stats = this.participantStatsSubject.value;
+    return !!(simulation && stats && 
+              (simulation.status === 'active' || simulation.status === 'ACTIVE'));
+  }
 
   get activeSimulation(): CrisisTypes.Simulation | null {
     return this.activeSimulationSubject.value;
@@ -51,196 +51,119 @@ export class CrisisSimulatorStateService {
     return this.participantStatsSubject.value;
   }
 
-  get hasJoinedSimulation(): boolean {
-    return this.participantStatsSubject.value !== null;
-  }
-
-  get isSimulationActive(): boolean {
-    const sim = this.activeSimulationSubject.value;
-    return sim !== null && (sim.status === 'active' || sim.status === 'ACTIVE');
-  }
-
-  get canTrade(): boolean {
-    return this.isSimulationActive && this.hasJoinedSimulation;
-  }
-
   // ============================================================================
-  // DATA LOADING
+  // SIMULATION MANAGEMENT
   // ============================================================================
 
   loadActiveSimulation(): Observable<CrisisTypes.Simulation | null> {
     this.isLoadingSubject.next(true);
+    
     return this.crisisService.getActiveSimulation().pipe(
       tap({
         next: (simulation) => {
           this.activeSimulationSubject.next(simulation);
           
           if (simulation) {
-            // Load related data
             this.loadCrisisSymbols(simulation.crisis_type);
-            
-            if (this.isSimulationActive) {
-              this.loadParticipantStats();
-            }
+            this.loadParticipantStats();
           }
+          
           this.isLoadingSubject.next(false);
         },
         error: (error) => {
-          console.error('Error loading simulation:', error);
-          this.errorSubject.next('Failed to load simulation');
+          this.handleError('Failed to load simulation', error);
           this.isLoadingSubject.next(false);
         }
       })
     );
   }
 
-  loadParticipantStats(): void {
-    this.crisisService.getMyStats().subscribe({
-      next: (stats) => {
-        this.participantStatsSubject.next(stats);
-      },
-      error: (error) => {
-        console.error('Error loading participant stats:', error);
-        this.participantStatsSubject.next(null);
-      }
-    });
-  }
-
-  loadOrders(statusFilter?: string, limit: number = 50): void {
-    this.crisisService.getOrders(statusFilter, limit).subscribe({
-      next: (orders) => {
-        this.ordersSubject.next(orders);
-      },
-      error: (error) => {
-        console.error('Error loading orders:', error);
-        this.ordersSubject.next([]);
-      }
-    });
-  }
-
-  loadLeaderboard(limit: number = 50): void {
-    this.crisisService.getLeaderboard(limit).subscribe({
-      next: (leaderboard) => {
-        this.leaderboardSubject.next(leaderboard);
-      },
-      error: (error) => {
-        console.error('Error loading leaderboard:', error);
-      }
-    });
-  }
-
-  loadCrisisSymbols(crisisType: string): void {
-    this.crisisService.getCrisisSymbols(crisisType).subscribe({
-      next: (response) => {
-        this.crisisSymbolsSubject.next(response);
-        
-        // Auto-select first symbol if none selected
-        if (response.symbols.length > 0 && !this.selectedSymbolSubject.value) {
-          this.selectSymbol(response.symbols[0]);
-        }
-      },
-      error: (error) => {
-        console.error('Error loading crisis symbols:', error);
-      }
-    });
-  }
-
-  loadMarketData(symbol: string): void {
-    if (!symbol) return;
-    
-    this.crisisService.getMarketData(symbol).subscribe({
-      next: (data) => {
-        this.marketDataSubject.next(data);
-      },
-      error: (error) => {
-        console.error('Error loading market data:', error);
-        this.marketDataSubject.next(null);
-      }
-    });
-  }
-
-  // ============================================================================
-  // STATE UPDATES
-  // ============================================================================
-
-  selectSymbol(symbol: CrisisTypes.SymbolInfo): void {
-    this.selectedSymbolSubject.next(symbol);
-    this.loadMarketData(symbol.symbol);
-  }
-
-  clearSelectedSymbol(): void {
-    this.selectedSymbolSubject.next(null);
-    this.marketDataSubject.next(null);
-  }
-
-  setError(message: string): void {
-    this.errorSubject.next(message);
-  }
-
-  clearError(): void {
-    this.errorSubject.next('');
-  }
-
-  // ============================================================================
-  // SIMULATION ACTIONS
-  // ============================================================================
-
-  joinSimulation(initialCash: number = 100000): Observable<any> {
-    if (!this.activeSimulation) {
-      throw new Error('No active simulation');
-    }
-
+  joinSimulation(simulationId: number, initialCash: number = 100000): Observable<any> {
     this.isLoadingSubject.next(true);
-    return this.crisisService.joinSimulation(this.activeSimulation.id, initialCash).pipe(
+    
+    return this.crisisService.joinSimulation(simulationId, initialCash).pipe(
       tap({
         next: () => {
           this.loadActiveSimulation().subscribe();
-          this.loadParticipantStats();
           this.isLoadingSubject.next(false);
         },
         error: (error) => {
-          console.error('Error joining simulation:', error);
-          this.errorSubject.next(error.error?.detail || 'Failed to join simulation');
+          this.handleError('Failed to join simulation', error);
           this.isLoadingSubject.next(false);
         }
       })
     );
   }
 
-  leaveSimulation(): Observable<any> {
-    if (!this.activeSimulation) {
-      throw new Error('No active simulation');
-    }
-
-    return this.crisisService.leaveSimulation(this.activeSimulation.id).pipe(
+  leaveSimulation(simulationId: number): Observable<any> {
+    this.isLoadingSubject.next(true);
+    
+    return this.crisisService.leaveSimulation(simulationId).pipe(
       tap({
         next: () => {
-          this.participantStatsSubject.next(null);
-          this.ordersSubject.next([]);
-          this.clearSelectedSymbol();
-          this.loadActiveSimulation().subscribe();
+          this.clearState();
+          this.isLoadingSubject.next(false);
         },
         error: (error) => {
-          console.error('Error leaving simulation:', error);
-          this.errorSubject.next(error.error?.detail || 'Failed to leave simulation');
+          this.handleError('Failed to leave simulation', error);
+          this.isLoadingSubject.next(false);
         }
       })
     );
   }
+
+  // ============================================================================
+  // PARTICIPANT STATS
+  // ============================================================================
+
+  loadParticipantStats(): Observable<CrisisTypes.ParticipantStats> {
+    return this.crisisService.getMyStats().pipe(
+      tap({
+        next: (stats) => {
+          this.participantStatsSubject.next(stats);
+        },
+        error: (error) => {
+          this.handleError('Failed to load stats', error);
+        }
+      })
+    );
+  }
+
+  updateParticipantStats(stats: CrisisTypes.ParticipantStats): void {
+    this.participantStatsSubject.next(stats);
+  }
+
+  // ============================================================================
+  // TRADING - ORDERS
+  // ============================================================================
 
   placeOrder(order: CrisisTypes.PlaceOrderRequest): Observable<any> {
     this.isLoadingSubject.next(true);
+    
     return this.crisisService.placeOrder(order).pipe(
       tap({
         next: () => {
+          // Refresh orders and stats after placing order
           this.loadOrders();
-          this.loadParticipantStats();
+          this.loadParticipantStats().subscribe();
           this.isLoadingSubject.next(false);
         },
         error: (error) => {
-          console.error('Error placing order:', error);
-          this.errorSubject.next(error.error?.detail || 'Failed to place order');
+          this.handleError('Failed to place order', error);
           this.isLoadingSubject.next(false);
+        }
+      })
+    );
+  }
+
+  loadOrders(statusFilter?: string): Observable<CrisisTypes.Order[]> {
+    return this.crisisService.getOrders(statusFilter).pipe(
+      tap({
+        next: (orders) => {
+          this.ordersSubject.next(orders);
+        },
+        error: (error) => {
+          this.handleError('Failed to load orders', error);
         }
       })
     );
@@ -253,83 +176,247 @@ export class CrisisSimulatorStateService {
           this.loadOrders();
         },
         error: (error) => {
-          console.error('Error cancelling order:', error);
-          this.errorSubject.next(error.error?.detail || 'Failed to cancel order');
+          this.handleError('Failed to cancel order', error);
         }
       })
     );
   }
 
   // ============================================================================
-  // AUTO-REFRESH
+  // POSITIONS - COMPLETELY REWRITTEN
   // ============================================================================
 
-  startAutoRefresh(): void {
-    this.stopAutoRefresh(); // Clean up existing subscriptions
-
-    // Refresh simulation status every 3 seconds
-    const simSub = interval(3000).pipe(
-      switchMap(() => this.crisisService.getActiveSimulation())
-    ).subscribe({
-      next: (simulation) => {
-        const previousStatus = this.activeSimulation?.status;
-        this.activeSimulationSubject.next(simulation);
-        
-        // Reload data if status changed
-        if (simulation && previousStatus !== simulation.status) {
-          if (simulation.status === 'active' || simulation.status === 'ACTIVE') {
-            this.loadParticipantStats();
-            this.loadCrisisSymbols(simulation.crisis_type);
-          }
+  /**
+   * Close a position - Returns full response from backend
+   */
+  closePosition(orderId: number, quantity?: number): Observable<any> {
+    console.log('🔄 State Service: Closing position', { orderId, quantity });
+    
+    return this.crisisService.closePosition(orderId, quantity).pipe(
+      tap({
+        next: (response) => {
+          console.log('✅ State Service: Position closed successfully', response);
+          
+          // Trigger refresh of orders and stats
+          this.loadOrders().subscribe();
+          this.loadParticipantStats().subscribe();
+          this.loadLeaderboard().subscribe();
+        },
+        error: (error) => {
+          console.error('❌ State Service: Error closing position', error);
+          this.handleError('Failed to close position', error);
         }
-      },
-      error: () => {}
-    });
-
-    // Refresh participant stats every 2 seconds when active
-    const statsSub = interval(2000).subscribe(() => {
-      if (this.canTrade) {
-        this.loadParticipantStats();
-      }
-    });
-
-    // Refresh leaderboard every 5 seconds when active
-    const leaderboardSub = interval(5000).subscribe(() => {
-      if (this.isSimulationActive) {
-        this.loadLeaderboard();
-      }
-    });
-
-    // Refresh market data every 1 second when symbol selected
-    const marketSub = interval(1000).subscribe(() => {
-      const symbol = this.selectedSymbolSubject.value;
-      if (symbol && this.isSimulationActive) {
-        this.loadMarketData(symbol.symbol);
-      }
-    });
-
-    this.refreshSubscriptions.push(simSub, statsSub, leaderboardSub, marketSub);
+      }),
+      catchError((error) => {
+        // Re-throw the error so component can handle it
+        throw error;
+      })
+    );
   }
 
-  stopAutoRefresh(): void {
-    this.refreshSubscriptions.forEach(sub => sub.unsubscribe());
-    this.refreshSubscriptions = [];
+  /**
+   * Close all positions - Returns full response from backend
+   */
+  closeAllPositions(): Observable<any> {
+    console.log('🔄 State Service: Closing all positions');
+    
+    return this.crisisService.closeAllPositions().pipe(
+      tap({
+        next: (response) => {
+          console.log('✅ State Service: All positions closed successfully', response);
+          
+          // Trigger refresh of orders and stats
+          this.loadOrders().subscribe();
+          this.loadParticipantStats().subscribe();
+          this.loadLeaderboard().subscribe();
+        },
+        error: (error) => {
+          console.error('❌ State Service: Error closing all positions', error);
+          this.handleError('Failed to close all positions', error);
+        }
+      }),
+      catchError((error) => {
+        // Re-throw the error so component can handle it
+        throw error;
+      })
+    );
   }
 
   // ============================================================================
-  // CLEANUP
+  // MARKET DATA
   // ============================================================================
 
-  reset(): void {
-    this.stopAutoRefresh();
+  loadMarketData(symbol: string): Observable<CrisisTypes.MarketData> {
+    return this.crisisService.getMarketData(symbol).pipe(
+      tap({
+        next: (data) => {
+          this.marketDataSubject.next(data);
+        },
+        error: (error) => {
+          this.handleError(`Failed to load market data for ${symbol}`, error);
+        }
+      })
+    );
+  }
+
+  updateMarketData(data: CrisisTypes.MarketData): void {
+    this.marketDataSubject.next(data);
+  }
+
+  // ============================================================================
+  // LEADERBOARD
+  // ============================================================================
+
+  loadLeaderboard(limit: number = 50): Observable<CrisisTypes.Leaderboard> {
+    return this.crisisService.getLeaderboard(limit).pipe(
+      tap({
+        next: (leaderboard) => {
+          this.leaderboardSubject.next(leaderboard);
+        },
+        error: (error) => {
+          this.handleError('Failed to load leaderboard', error);
+        }
+      })
+    );
+  }
+
+  updateLeaderboard(leaderboard: CrisisTypes.Leaderboard): void {
+    this.leaderboardSubject.next(leaderboard);
+  }
+
+  // ============================================================================
+  // CRISIS SYMBOLS & ASSETS
+  // ============================================================================
+
+  loadCrisisSymbols(crisisType: string): Observable<CrisisTypes.CrisisSymbolsResponse> {
+    return this.crisisService.getCrisisSymbols(crisisType).pipe(
+      tap({
+        next: (symbols) => {
+          this.crisisSymbolsSubject.next(symbols);
+          
+          if (symbols.symbols && symbols.symbols.length > 0 && !this.selectedSymbolSubject.value) {
+            this.selectSymbol(symbols.symbols[0]);
+          }
+        },
+        error: (error) => {
+          this.handleError('Failed to load crisis symbols', error);
+        }
+      })
+    );
+  }
+
+  selectSymbol(symbol: CrisisTypes.SymbolInfo): void {
+    this.selectedSymbolSubject.next(symbol);
+    
+    if (symbol) {
+      this.loadMarketData(symbol.symbol).subscribe();
+    }
+  }
+
+  // ============================================================================
+  // ERROR HANDLING
+  // ============================================================================
+
+  private handleError(message: string, error: any): void {
+    console.error(message, error);
+    
+    let errorMessage = message;
+    
+    if (error?.error?.detail) {
+      errorMessage = `${message}: ${error.error.detail}`;
+    } else if (error?.message) {
+      errorMessage = `${message}: ${error.message}`;
+    }
+    
+    this.errorSubject.next(errorMessage);
+    
+    // Auto-clear error after 5 seconds
+    setTimeout(() => {
+      if (this.errorSubject.value === errorMessage) {
+        this.errorSubject.next('');
+      }
+    }, 5000);
+  }
+
+  clearError(): void {
+    this.errorSubject.next('');
+  }
+
+  private setLoading(loading: boolean) {
+    this.isLoadingSubject.next(loading);
+  }
+
+  private setError(error: string) {
+    this.errorSubject.next(error);
+  }
+
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
+
+  clearState(): void {
     this.activeSimulationSubject.next(null);
     this.participantStatsSubject.next(null);
-    this.leaderboardSubject.next(null);
     this.ordersSubject.next([]);
+    this.leaderboardSubject.next(null);
     this.crisisSymbolsSubject.next(null);
     this.selectedSymbolSubject.next(null);
     this.marketDataSubject.next(null);
-    this.isLoadingSubject.next(false);
     this.errorSubject.next('');
+  }
+
+  // ============================================================================
+  // ADMIN ACTIONS
+  // ============================================================================
+
+  createSimulation(crisisType: string, maxParticipants: number, isCompetitive: boolean = false): Observable<any> {
+    this.isLoadingSubject.next(true);
+    
+    return this.crisisService.createSimulation(crisisType, maxParticipants, isCompetitive).pipe(
+      tap({
+        next: () => {
+          this.loadActiveSimulation().subscribe();
+          this.isLoadingSubject.next(false);
+        },
+        error: (error) => {
+          this.handleError('Failed to create simulation', error);
+          this.isLoadingSubject.next(false);
+        }
+      })
+    );
+  }
+
+  startSimulation(simulationId: number): Observable<any> {
+    this.isLoadingSubject.next(true);
+    
+    return this.crisisService.startSimulation(simulationId).pipe(
+      tap({
+        next: () => {
+          this.loadActiveSimulation().subscribe();
+          this.isLoadingSubject.next(false);
+        },
+        error: (error) => {
+          this.handleError('Failed to start simulation', error);
+          this.isLoadingSubject.next(false);
+        }
+      })
+    );
+  }
+
+  stopSimulation(simulationId: number, force: boolean = false): Observable<any> {
+    this.isLoadingSubject.next(true);
+    
+    return this.crisisService.stopSimulation(simulationId, force).pipe(
+      tap({
+        next: () => {
+          this.loadActiveSimulation().subscribe();
+          this.isLoadingSubject.next(false);
+        },
+        error: (error) => {
+          this.handleError('Failed to stop simulation', error);
+          this.isLoadingSubject.next(false);
+        }
+      })
+    );
   }
 }
