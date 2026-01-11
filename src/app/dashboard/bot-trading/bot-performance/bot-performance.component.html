@@ -1,0 +1,380 @@
+<!-- src/app/dashboard/bot-trading/bot-performance/bot-performance.component.html -->
+<div class="bot-performance-container">
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading && !performance">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading performance data...</p>
+  </div>
+
+  <!-- Error State -->
+  <mat-card class="error-card" *ngIf="error">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+    <button mat-button (click)="refresh()">Retry</button>
+  </mat-card>
+
+  <!-- Main Content -->
+  <div class="performance-content" *ngIf="performance">
+    
+    <!-- Performance Summary Card -->
+    <mat-card class="summary-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>analytics</mat-icon>
+          Performance Summary
+        </mat-card-title>
+        <button mat-icon-button (click)="refresh()" class="refresh-btn">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="summary-grid">
+          
+          <!-- Overall P&L -->
+          <div class="summary-item highlight" [class]="getPnLClass(performance.total_pnl)">
+            <div class="summary-icon">
+              <mat-icon>{{ performance.total_pnl >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+            </div>
+            <div class="summary-details">
+              <span class="summary-label">Total P&L</span>
+              <span class="summary-value">{{ formatPnL(performance.total_pnl) }}</span>
+              <span class="summary-subvalue">{{ formatPercentage(performance.total_pnl_pct) }}</span>
+            </div>
+          </div>
+
+          <!-- Win Rate -->
+          <div class="summary-item">
+            <div class="summary-icon">
+              <mat-icon>emoji_events</mat-icon>
+            </div>
+            <div class="summary-details">
+              <span class="summary-label">Win Rate</span>
+              <span class="summary-value">{{ performance.win_rate.toFixed(1) }}%</span>
+              <span class="summary-subvalue">
+                {{ performance.winning_trades }}W / {{ performance.losing_trades }}L
+              </span>
+            </div>
+          </div>
+
+          <!-- Total Trades -->
+          <div class="summary-item">
+            <div class="summary-icon">
+              <mat-icon>swap_horiz</mat-icon>
+            </div>
+            <div class="summary-details">
+              <span class="summary-label">Total Trades</span>
+              <span class="summary-value">{{ performance.total_trades }}</span>
+              <span class="summary-subvalue">Executed</span>
+            </div>
+          </div>
+
+          <!-- Avg P&L per Trade -->
+          <div class="summary-item" [class]="getPnLClass(performance.avg_pnl_per_trade)">
+            <div class="summary-icon">
+              <mat-icon>functions</mat-icon>
+            </div>
+            <div class="summary-details">
+              <span class="summary-label">Avg P&L/Trade</span>
+              <span class="summary-value">{{ formatPnL(performance.avg_pnl_per_trade) }}</span>
+            </div>
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Win/Loss Analysis -->
+    <div class="analysis-row">
+      
+      <!-- Best & Worst Trades -->
+      <mat-card class="best-worst-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>compare_arrows</mat-icon>
+            Best & Worst Trades
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="trade-extremes">
+            <div class="extreme-item best-trade">
+              <mat-icon>arrow_upward</mat-icon>
+              <div class="extreme-content">
+                <span class="extreme-label">Best Trade</span>
+                <span class="extreme-value text-success">{{ formatPnL(performance.best_trade) }}</span>
+              </div>
+            </div>
+            
+            <mat-divider [vertical]="true"></mat-divider>
+            
+            <div class="extreme-item worst-trade">
+              <mat-icon>arrow_downward</mat-icon>
+              <div class="extreme-content">
+                <span class="extreme-label">Worst Trade</span>
+                <span class="extreme-value text-danger">{{ formatPnL(performance.worst_trade) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="trade-metrics">
+            <div class="metric">
+              <span class="metric-label">Risk/Reward Ratio</span>
+              <span class="metric-value">
+                {{ (Math.abs(performance.best_trade) / Math.abs(performance.worst_trade)).toFixed(2) }}
+              </span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Total Fees Paid</span>
+              <span class="metric-value text-danger">${{ performance.total_fees.toFixed(2) }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Trade Distribution Chart -->
+      <mat-card class="distribution-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>pie_chart</mat-icon>
+            Trade Distribution
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="distribution-chart">
+            <div class="chart-container">
+              <!-- Simple visual representation -->
+              <div class="pie-visual">
+                <div class="pie-segment winning" 
+                     [style.--percentage]="performance.win_rate + '%'">
+                </div>
+                <div class="pie-center">
+                  <span class="center-value">{{ performance.win_rate.toFixed(0) }}%</span>
+                  <span class="center-label">Win Rate</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-color winning"></div>
+                <span>Winning ({{ performance.winning_trades }})</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color losing"></div>
+                <span>Losing ({{ performance.losing_trades }})</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Performance Metrics Grid -->
+    <mat-card class="metrics-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>assessment</mat-icon>
+          Detailed Metrics
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="metrics-grid">
+          
+          <div class="metric-item">
+            <mat-icon>schedule</mat-icon>
+            <div class="metric-content">
+              <span class="metric-label">Uptime</span>
+              <span class="metric-value">{{ formatUptime(performance.uptime_hours) }}</span>
+            </div>
+          </div>
+
+          <div class="metric-item">
+            <mat-icon>speed</mat-icon>
+            <div class="metric-content">
+              <span class="metric-label">Status</span>
+              <mat-chip [class.status-active]="performance.status === 'ACTIVE'"
+                        [class.status-paused]="performance.status === 'PAUSED'">
+                {{ performance.status }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <div class="metric-item">
+            <mat-icon>event</mat-icon>
+            <div class="metric-content">
+              <span class="metric-label">Last Execution</span>
+              <span class="metric-value">
+                {{ performance.last_execution ? (performance.last_execution | date:'short') : 'Never' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="metric-item">
+            <mat-icon>trending_up</mat-icon>
+            <div class="metric-content">
+              <span class="metric-label">Performance Rating</span>
+              <mat-chip [class]="'rating-' + getRiskLevel()">
+                {{ getPerformanceRating() }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <div class="metric-item">
+            <mat-icon>warning</mat-icon>
+            <div class="metric-content">
+              <span class="metric-label">Risk Level</span>
+              <mat-chip [style.background-color]="getRiskLevelColor()">
+                {{ getRiskLevel().toUpperCase() }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <div class="metric-item">
+            <mat-icon>show_chart</mat-icon>
+            <div class="metric-content">
+              <span class="metric-label">Symbol</span>
+              <span class="metric-value">{{ performance.symbol }}</span>
+            </div>
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Performance Indicators -->
+    <mat-card class="indicators-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>dashboard</mat-icon>
+          Performance Indicators
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        
+        <!-- Win Rate Progress -->
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-label">Win Rate</span>
+            <span class="indicator-value">{{ performance.win_rate.toFixed(1) }}%</span>
+          </div>
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="performance.win_rate"
+            [class.good]="performance.win_rate >= 55"
+            [class.fair]="performance.win_rate >= 45 && performance.win_rate < 55"
+            [class.poor]="performance.win_rate < 45">
+          </mat-progress-bar>
+          <div class="indicator-description">
+            <span *ngIf="performance.win_rate >= 55" class="text-success">
+              ✓ Excellent win rate - Above industry average
+            </span>
+            <span *ngIf="performance.win_rate >= 45 && performance.win_rate < 55" class="text-warning">
+              ⚠ Fair win rate - Consider strategy optimization
+            </span>
+            <span *ngIf="performance.win_rate < 45" class="text-danger">
+              ✗ Low win rate - Strategy review recommended
+            </span>
+          </div>
+        </div>
+
+        <!-- Profitability Progress -->
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-label">Profitability</span>
+            <span class="indicator-value" [class]="getPnLClass(performance.total_pnl_pct)">
+              {{ formatPercentage(performance.total_pnl_pct) }}
+            </span>
+          </div>
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="Math.min(Math.abs(performance.total_pnl_pct), 100)"
+            [class]="getPnLClass(performance.total_pnl_pct)">
+          </mat-progress-bar>
+          <div class="indicator-description">
+            <span [class]="getPnLClass(performance.total_pnl)">
+              {{ performance.total_pnl >= 0 ? '✓ Profitable bot' : '✗ Currently in loss' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Trade Volume Progress -->
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-label">Trade Activity</span>
+            <span class="indicator-value">{{ performance.total_trades }} trades</span>
+          </div>
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="Math.min(performance.total_trades * 2, 100)">
+          </mat-progress-bar>
+          <div class="indicator-description">
+            <span>
+              {{ performance.total_trades > 50 ? '✓ Highly active' : 
+                 performance.total_trades > 20 ? 'Moderately active' : 
+                 'Low activity' }}
+            </span>
+          </div>
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Recommendations Card -->
+    <mat-card class="recommendations-card" *ngIf="performance.total_trades > 10">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>lightbulb</mat-icon>
+          Recommendations
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="recommendations-list">
+          
+          <div class="recommendation-item" *ngIf="performance.win_rate < 45">
+            <mat-icon class="warning">warning</mat-icon>
+            <div class="recommendation-content">
+              <h4>Low Win Rate</h4>
+              <p>Your win rate is below 45%. Consider reviewing your strategy parameters or testing different intervals.</p>
+            </div>
+          </div>
+
+          <div class="recommendation-item" *ngIf="performance.avg_pnl_per_trade < 0">
+            <mat-icon class="warning">trending_down</mat-icon>
+            <div class="recommendation-content">
+              <h4>Negative Average P&L</h4>
+              <p>On average, you're losing money per trade. Review stop-loss and take-profit settings.</p>
+            </div>
+          </div>
+
+          <div class="recommendation-item" *ngIf="Math.abs(performance.worst_trade) > Math.abs(performance.best_trade)">
+            <mat-icon class="warning">balance</mat-icon>
+            <div class="recommendation-content">
+              <h4>Poor Risk/Reward Ratio</h4>
+              <p>Your largest loss exceeds your largest win. Tighten stop-loss or widen take-profit targets.</p>
+            </div>
+          </div>
+
+          <div class="recommendation-item success" *ngIf="performance.win_rate >= 60 && performance.total_pnl > 0">
+            <mat-icon class="success">check_circle</mat-icon>
+            <div class="recommendation-content">
+              <h4>Excellent Performance!</h4>
+              <p>Your bot is performing well. Continue monitoring and consider scaling position sizes.</p>
+            </div>
+          </div>
+
+          <div class="recommendation-item info" *ngIf="performance.total_trades < 30">
+            <mat-icon class="info">info</mat-icon>
+            <div class="recommendation-content">
+              <h4>More Data Needed</h4>
+              <p>Run more trades to get statistically significant performance metrics (recommended: 50+ trades).</p>
+            </div>
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

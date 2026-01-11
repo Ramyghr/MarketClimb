@@ -1,0 +1,385 @@
+// ============================================
+// FILE 1: bot-overview.component.scss
+// ============================================
+
+.bot-overview-container {
+  padding: 20px;
+  
+  .loading-state, .error-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  
+  .overview-content {
+    display: grid;
+    gap: 20px;
+  }
+  
+  .config-card, .limits-card, .positions-card, .today-stats-card,
+  .activity-card, .overall-stats-card, .execution-card {
+    mat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+  }
+  
+  .config-grid, .stats-grid, .overall-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+  }
+  
+  .text-success { color: #10b981; }
+  .text-danger { color: #ef4444; }
+  
+  .status-ok { border-left: 4px solid #10b981; }
+  .status-warning { border-left: 4px solid #ff9800; }
+  .status-danger { border-left: 4px solid #ef4444; }
+}
+
+// ============================================
+// FILE 2: bot-performance.component.scss
+// ============================================
+
+.bot-performance-container {
+  padding: 20px;
+  
+  .performance-content {
+    display: grid;
+    gap: 20px;
+  }
+  
+  .summary-card, .best-worst-card, .distribution-card,
+  .metrics-card, .indicators-card, .recommendations-card {
+    mat-card-header {
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+  }
+  
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  
+  .summary-item {
+    padding: 20px;
+    border-radius: 8px;
+    background: #f9fafb;
+    
+    &.highlight {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      
+      .summary-label, .summary-subvalue {
+        color: rgba(255,255,255,0.9);
+      }
+    }
+  }
+  
+  .text-success { color: #10b981; }
+  .text-danger { color: #ef4444; }
+  .text-warning { color: #ff9800; }
+  
+  mat-progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    
+    &.good ::ng-deep .mat-progress-bar-fill::after {
+      background-color: #10b981;
+    }
+    &.fair ::ng-deep .mat-progress-bar-fill::after {
+      background-color: #ff9800;
+    }
+    &.poor ::ng-deep .mat-progress-bar-fill::after {
+      background-color: #ef4444;
+    }
+  }
+}
+
+// ============================================
+// FILE 3: bot-logs.component.scss
+// ============================================
+
+.bot-logs-container {
+  padding: 20px;
+  
+  .logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  
+  .logs-container {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 15px;
+  }
+  
+  .log-entry {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #cbd5e1;
+    background: white;
+    
+    &.level-info {
+      border-left-color: #3b82f6;
+      background: #eff6ff;
+    }
+    
+    &.level-warning {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+    }
+    
+    &.level-error {
+      border-left-color: #ef4444;
+      background: #fef2f2;
+    }
+  }
+  
+  .log-message {
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+  }
+  
+  .details-content pre {
+    background: #f3f4f6;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 12px;
+  }
+}
+
+// ============================================
+// FILE 4: create-bot-modal.component.scss
+// ============================================
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+  }
+}
+
+.progress-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 24px;
+  background: #f9fafb;
+  
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    &.active .step-number {
+      background: #6366f1;
+      color: white;
+    }
+    
+    &.completed .step-number {
+      background: #10b981;
+      color: white;
+    }
+  }
+  
+  .step-divider {
+    width: 80px;
+    height: 2px;
+    background: #e5e7eb;
+    margin: 0 10px;
+    margin-bottom: 28px;
+    
+    &.completed {
+      background: #10b981;
+    }
+  }
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.step-content {
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  
+  .step-description {
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.strategies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.strategy-card {
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  
+  &.selected {
+    border: 2px solid #6366f1;
+    background: #f0f1ff;
+  }
+  
+  .check-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #6366f1;
+    font-size: 28px;
+  }
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  
+  .footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navigation-buttons {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+.settings-section {
+  margin-bottom: 20px;
+  
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px 0;
+  }
+}
+
+.warning-card {
+  padding: 16px;
+  background: #fff3e0;
+  border-left: 4px solid #ff9800;
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+// ============================================
+// INSTRUCTIONS FOR IMPLEMENTATION
+// ============================================
+
+/*
+Create these files in your project:
+
+1. src/app/dashboard/bot-trading/bot-overview/bot-overview.component.scss
+2. src/app/dashboard/bot-trading/bot-performance/bot-performance.component.scss
+3. src/app/dashboard/bot-trading/bot-logs/bot-logs.component.scss
+4. src/app/dashboard/bot-trading/create-bot-modal/create-bot-modal.component.scss
+
+Copy the corresponding SCSS section into each file.
+
+If components still don't show:
+1. Check browser console for errors (F12)
+2. Verify all components are declared in app.module.ts
+3. Check that Material modules are imported
+4. Make sure @Input() properties are being passed correctly
+*/

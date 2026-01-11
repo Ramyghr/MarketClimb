@@ -1,0 +1,307 @@
+<!-- src/app/dashboard/bot-trading/create-bot-modal/create-bot-modal.component.html -->
+<div class="modal-backdrop" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <mat-icon>smart_toy</mat-icon>
+        <h2>Create Trading Bot</h2>
+      </div>
+      <button mat-icon-button (click)="closeModal()" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+      <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
+        <div class="step-number">1</div>
+        <span class="step-label">Basic Info</span>
+      </div>
+      <div class="step-divider" [class.completed]="currentStep > 1"></div>
+      <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
+        <div class="step-number">2</div>
+        <span class="step-label">Strategy</span>
+      </div>
+      <div class="step-divider" [class.completed]="currentStep > 2"></div>
+      <div class="step" [class.active]="currentStep === 3">
+        <div class="step-number">3</div>
+        <span class="step-label">Risk Settings</span>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    <mat-card class="error-alert" *ngIf="error">
+      <mat-icon>error</mat-icon>
+      <span>{{ error }}</span>
+    </mat-card>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <form [formGroup]="botForm">
+        
+        <!-- Step 1: Basic Information -->
+        <div class="step-content" *ngIf="currentStep === 1">
+          <h3>Basic Information</h3>
+          <p class="step-description">Enter the basic details for your trading bot</p>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Bot Name</mat-label>
+            <input matInput formControlName="name" placeholder="e.g., AAPL MA Crossover Bot">
+            <mat-icon matPrefix>label</mat-icon>
+            <mat-error *ngIf="botForm.get('name')?.hasError('required')">
+              Bot name is required
+            </mat-error>
+            <mat-error *ngIf="botForm.get('name')?.hasError('minlength')">
+              Name must be at least 3 characters
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description (Optional)</mat-label>
+            <textarea matInput formControlName="description" rows="3" 
+                      placeholder="Describe your bot's purpose and strategy"></textarea>
+            <mat-icon matPrefix>description</mat-icon>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>Symbol</mat-label>
+              <input matInput formControlName="symbol" placeholder="e.g., AAPL, BTCUSDT">
+              <mat-icon matPrefix>show_chart</mat-icon>
+              <mat-error *ngIf="botForm.get('symbol')?.hasError('required')">
+                Symbol is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>Asset Type</mat-label>
+              <mat-select formControlName="asset_type">
+                <mat-option *ngFor="let type of assetTypes" [value]="type">
+                  {{ type }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix>category</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <mat-card class="info-card">
+            <mat-icon>info</mat-icon>
+            <div>
+              <h4>Symbol Format Guide</h4>
+              <ul>
+                <li><strong>Stocks:</strong> AAPL, TSLA, GOOGL</li>
+                <li><strong>Crypto:</strong> BTCUSDT, ETHUSDT</li>
+                <li><strong>Forex:</strong> EURUSD, GBPUSD</li>
+                <li><strong>Commodities:</strong> XAUUSD (Gold), CL (Oil)</li>
+              </ul>
+            </div>
+          </mat-card>
+        </div>
+
+        <!-- Step 2: Strategy Selection -->
+        <div class="step-content" *ngIf="currentStep === 2">
+          <h3>Select Trading Strategy</h3>
+          <p class="step-description">Choose a strategy that fits your trading style</p>
+
+          <!-- Strategy Templates Grid -->
+          <div class="strategies-grid">
+            <mat-card *ngFor="let template of strategyTemplates" 
+                      class="strategy-card"
+                      [class.selected]="selectedTemplate?.strategy_type === template.strategy_type"
+                      (click)="selectStrategy(template)">
+              
+              <div class="strategy-header">
+                <h4>{{ template.name }}</h4>
+                <mat-chip [style.background-color]="getRiskLevelColor(template.risk_level)">
+                  <mat-icon>{{ getRiskLevelIcon(template.risk_level) }}</mat-icon>
+                  {{ template.risk_level }}
+                </mat-chip>
+              </div>
+
+              <p class="strategy-description">{{ template.description }}</p>
+
+              <div class="strategy-details">
+                <div class="detail-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ template.recommended_intervals.join(', ') }}</span>
+                </div>
+              </div>
+
+              <mat-icon class="check-icon" *ngIf="selectedTemplate?.strategy_type === template.strategy_type">
+                check_circle
+              </mat-icon>
+            </mat-card>
+          </div>
+
+          <!-- Strategy Parameters -->
+          <mat-card class="params-card" *ngIf="selectedTemplate">
+            <h4>Strategy Parameters</h4>
+            <p>Configure the parameters for {{ selectedTemplate.name }}</p>
+
+            <div class="params-grid">
+              <mat-form-field appearance="outline" *ngFor="let key of getStrategyParamKeys()">
+                <mat-label>{{ getStrategyParamDescription(key) }}</mat-label>
+                <input matInput 
+                       type="number" 
+                       [value]="strategyParams[key]"
+                      (input)="onStrategyParamInput($event, key)">
+                <mat-hint>{{ getStrategyParamDescription(key) }}</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Execution Interval</mat-label>
+              <mat-select formControlName="interval">
+                <mat-option *ngFor="let int of selectedTemplate.recommended_intervals" [value]="int">
+                  {{ int }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix>schedule</mat-icon>
+              <mat-hint>How often the bot checks for trading signals</mat-hint>
+            </mat-form-field>
+          </mat-card>
+        </div>
+
+        <!-- Step 3: Risk Management -->
+        <div class="step-content" *ngIf="currentStep === 3">
+          <h3>Risk Management</h3>
+          <p class="step-description">Configure position sizing and risk controls</p>
+
+          <mat-card class="settings-section">
+            <h4><mat-icon>account_balance_wallet</mat-icon> Position Settings</h4>
+            
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Max Position Size</mat-label>
+                <input matInput type="number" formControlName="max_position_size">
+                <span matPrefix>$</span>
+                <mat-hint>Maximum $ amount per trade</mat-hint>
+                <mat-error *ngIf="botForm.get('max_position_size')?.hasError('required')">
+                  Required
+                </mat-error>
+                <mat-error *ngIf="botForm.get('max_position_size')?.hasError('min')">
+                  Minimum $10
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Max Open Trades</mat-label>
+                <input matInput type="number" formControlName="max_open_trades">
+                <mat-hint>Maximum concurrent positions</mat-hint>
+                <mat-error *ngIf="botForm.get('max_open_trades')?.hasError('required')">
+                  Required
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </mat-card>
+
+          <mat-card class="settings-section">
+            <h4><mat-icon>shield</mat-icon> Stop Loss & Take Profit</h4>
+            
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Stop Loss %</mat-label>
+                <input matInput type="number" formControlName="stop_loss_pct" step="0.1">
+                <span matSuffix>%</span>
+                <mat-hint>Exit loss threshold (optional)</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Take Profit %</mat-label>
+                <input matInput type="number" formControlName="take_profit_pct" step="0.1">
+                <span matSuffix>%</span>
+                <mat-hint>Exit profit target (optional)</mat-hint>
+              </mat-form-field>
+            </div>
+          </mat-card>
+
+          <mat-card class="settings-section">
+            <h4><mat-icon>today</mat-icon> Daily Limits</h4>
+            
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Max Daily Trades</mat-label>
+                <input matInput type="number" formControlName="max_daily_trades">
+                <mat-hint>Maximum trades per day</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Max Daily Loss</mat-label>
+                <input matInput type="number" formControlName="max_daily_loss">
+                <span matPrefix>$</span>
+                <mat-hint>Stop trading after this loss</mat-hint>
+              </mat-form-field>
+            </div>
+          </mat-card>
+
+          <mat-card class="settings-section">
+            <h4><mat-icon>trending_up</mat-icon> Leverage (Optional)</h4>
+            
+            <mat-slide-toggle formControlName="use_leverage">
+              Enable Leverage Trading
+            </mat-slide-toggle>
+
+            <mat-form-field appearance="outline" class="full-width" *ngIf="botForm.value.use_leverage">
+              <mat-label>Leverage Multiplier</mat-label>
+              <input matInput type="number" formControlName="leverage" min="1" max="20">
+              <span matSuffix>x</span>
+              <mat-hint>1x = no leverage, higher values = more risk</mat-hint>
+              <mat-error *ngIf="botForm.get('leverage')?.hasError('min')">
+                Minimum 1x
+              </mat-error>
+              <mat-error *ngIf="botForm.get('leverage')?.hasError('max')">
+                Maximum 20x
+              </mat-error>
+            </mat-form-field>
+
+            <mat-card class="warning-card" *ngIf="botForm.value.use_leverage">
+              <mat-icon>warning</mat-icon>
+              <div>
+                <h5>⚠️ Leverage Warning</h5>
+                <p>Leverage amplifies both gains and losses. Use with caution and proper risk management.</p>
+              </div>
+            </mat-card>
+          </mat-card>
+
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-actions">
+        <button mat-button (click)="closeModal()" [disabled]="loading">
+          Cancel
+        </button>
+        
+        <div class="navigation-buttons">
+          <button mat-button (click)="previousStep()" *ngIf="currentStep > 1" [disabled]="loading">
+            <mat-icon>arrow_back</mat-icon>
+            Previous
+          </button>
+          
+          <button mat-raised-button color="primary" 
+                  (click)="nextStep()" 
+                  *ngIf="currentStep < totalSteps"
+                  [disabled]="loading">
+            Next
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+          
+          <button mat-raised-button color="primary" 
+                  (click)="createBot()" 
+                  *ngIf="currentStep === totalSteps"
+                  [disabled]="loading || botForm.invalid">
+            <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+            <mat-icon *ngIf="!loading">check</mat-icon>
+            {{ loading ? 'Creating...' : 'Create Bot' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

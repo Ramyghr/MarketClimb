@@ -1,0 +1,166 @@
+<!-- src/app/dashboard/bot-trading/bot-logs/bot-logs.component.html -->
+<div class="bot-logs-container">
+  
+  <!-- Header Section -->
+  <div class="logs-header">
+    <div class="header-left">
+      <h3>
+        <mat-icon>description</mat-icon>
+        Bot Execution Logs
+      </h3>
+      <div class="stats-chips">
+        <mat-chip class="stat-chip total">
+          <mat-icon>all_inbox</mat-icon>
+          Total: {{ stats.total }}
+        </mat-chip>
+        <mat-chip class="stat-chip info">
+          <mat-icon>info</mat-icon>
+          Info: {{ stats.info }}
+        </mat-chip>
+        <mat-chip class="stat-chip warning">
+          <mat-icon>warning</mat-icon>
+          Warning: {{ stats.warning }}
+        </mat-chip>
+        <mat-chip class="stat-chip error">
+          <mat-icon>error</mat-icon>
+          Error: {{ stats.error }}
+        </mat-chip>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <button mat-icon-button (click)="scrollToTop()" matTooltip="Scroll to top">
+        <mat-icon>arrow_upward</mat-icon>
+      </button>
+      <button mat-icon-button (click)="scrollToBottom()" matTooltip="Scroll to bottom">
+        <mat-icon>arrow_downward</mat-icon>
+      </button>
+      <button mat-icon-button [color]="autoScroll ? 'primary' : ''" 
+              (click)="toggleAutoScroll()" 
+              matTooltip="Toggle auto-scroll">
+        <mat-icon>{{ autoScroll ? 'lock' : 'lock_open' }}</mat-icon>
+      </button>
+      <button mat-stroked-button (click)="exportLogs()">
+        <mat-icon>download</mat-icon>
+        Export
+      </button>
+      <button mat-stroked-button (click)="clearLogs()" color="warn">
+        <mat-icon>clear_all</mat-icon>
+        Clear
+      </button>
+      <button mat-stroked-button (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <mat-card class="error-alert" *ngIf="error">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+    <button mat-button (click)="refresh()">Retry</button>
+  </mat-card>
+
+  <!-- Filters Section -->
+  <mat-card class="filters-card">
+    <div class="filters-content">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput 
+               placeholder="Search logs..." 
+               [(ngModel)]="searchQuery" 
+               (ngModelChange)="onSearchChange($event)">
+        <button mat-icon-button matSuffix *ngIf="searchQuery" (click)="searchQuery = ''; onSearchChange('')">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-button-toggle-group [(value)]="levelFilter" (change)="onFilterChange()" class="level-filter">
+        <mat-button-toggle value="ALL">All</mat-button-toggle>
+        <mat-button-toggle value="INFO">Info</mat-button-toggle>
+        <mat-button-toggle value="WARNING">Warning</mat-button-toggle>
+        <mat-button-toggle value="ERROR">Error</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+  </mat-card>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading && logs.length === 0">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading logs...</p>
+  </div>
+
+  <!-- Logs Container -->
+  <mat-card class="logs-card" *ngIf="!loading || logs.length > 0">
+    <div class="logs-container">
+      <div class="log-entry" 
+           *ngFor="let log of filteredLogs; trackBy: trackByLogId"
+           [class]="getLevelClass(log.level)">
+        
+        <div class="log-header">
+          <div class="log-level">
+            <mat-icon>{{ getLevelIcon(log.level) }}</mat-icon>
+            <span class="level-badge">{{ log.level }}</span>
+          </div>
+          
+          <div class="log-timestamp">
+            <span class="relative-time">{{ getRelativeTime(log.timestamp) }}</span>
+            <span class="absolute-time">{{ log.timestamp | date:'short' }}</span>
+          </div>
+
+          <button mat-icon-button 
+                  class="copy-btn"
+                  (click)="copyToClipboard(log.message)"
+                  matTooltip="Copy message">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </div>
+
+        <div class="log-message">{{ log.message }}</div>
+
+        <div class="log-details" *ngIf="hasDetails(log)">
+          <button mat-button 
+                  class="details-toggle"
+                  (click)="log.expanded = !log.expanded">
+            <mat-icon>{{ log.expanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+            {{ log.expanded ? 'Hide' : 'Show' }} Details
+          </button>
+          
+          <div class="details-content" *ngIf="log.expanded">
+            <pre>{{ formatDetails(log.details) }}</pre>
+            <button mat-icon-button 
+                    (click)="copyToClipboard(formatDetails(log.details))"
+                    matTooltip="Copy details">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-logs" *ngIf="filteredLogs.length === 0 && !loading">
+        <mat-icon>info</mat-icon>
+        <p *ngIf="searchQuery || levelFilter !== 'ALL'">No logs match your filters</p>
+        <p *ngIf="!searchQuery && levelFilter === 'ALL'">No logs available</p>
+        <button mat-raised-button 
+                *ngIf="searchQuery || levelFilter !== 'ALL'" 
+                (click)="searchQuery = ''; levelFilter = 'ALL'; onFilterChange()">
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Loading indicator for live updates -->
+      <div class="live-indicator" *ngIf="loading && logs.length > 0">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>Updating...</span>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Auto-scroll indicator -->
+  <div class="auto-scroll-indicator" *ngIf="autoScroll">
+    <mat-icon>lock</mat-icon>
+    <span>Auto-scroll enabled</span>
+  </div>
+</div>

@@ -1,0 +1,401 @@
+<!-- src/app/dashboard/bot-trading/bot-trading.component.html -->
+<div class="bot-trading-container">
+  
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="page-title">
+          <mat-icon>smart_toy</mat-icon>
+          Bot Trading Dashboard
+        </h1>
+        <p class="page-subtitle">Automated trading strategies powered by AI</p>
+      </div>
+
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="openCreateModal()" class="create-bot-btn">
+          <mat-icon>add</mat-icon>
+          Create New Bot
+        </button>
+        <button mat-icon-button (click)="refresh()" matTooltip="Refresh" class="refresh-btn">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- System Status Bar -->
+    <div class="system-status-bar" *ngIf="systemStatus">
+      <div class="status-item">
+        <mat-icon [class.online]="systemStatus.executor_running">circle</mat-icon>
+        <span>Executor: {{ systemStatus.executor_running ? 'Running' : 'Stopped' }}</span>
+      </div>
+      <div class="status-item">
+        <mat-icon>analytics</mat-icon>
+        <span>{{ systemStatus.active_bots }} / {{ systemStatus.total_bots }} Active</span>
+      </div>
+      <div class="status-item">
+        <mat-icon>extension</mat-icon>
+        <span>{{ systemStatus.supported_strategies }} Strategies</span>
+      </div>
+      <div class="status-item">
+        <mat-icon>schedule</mat-icon>
+        <span>{{ systemStatus.timestamp | date:'short' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <mat-card class="error-alert" *ngIf="error">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+    <button mat-icon-button (click)="clearError()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </mat-card>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <mat-card class="stat-card">
+      <div class="stat-icon total">
+        <mat-icon>inventory</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total Bots</div>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <div class="stat-icon active">
+        <mat-icon>play_circle</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.active }}</div>
+        <div class="stat-label">Active Bots</div>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <div class="stat-icon" [class.positive]="stats.totalPnL >= 0" [class.negative]="stats.totalPnL < 0">
+        <mat-icon>{{ stats.totalPnL >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" [class.text-success]="stats.totalPnL >= 0" [class.text-danger]="stats.totalPnL < 0">
+          {{ formatPnL(stats.totalPnL) }}
+        </div>
+        <div class="stat-label">Total P&L</div>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <div class="stat-icon trades">
+        <mat-icon>swap_horiz</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.totalTrades }}</div>
+        <div class="stat-label">Total Trades</div>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <div class="stat-icon winrate">
+        <mat-icon>emoji_events</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.winRate.toFixed(1) }}%</div>
+        <div class="stat-label">Win Rate</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    
+    <!-- Left Sidebar - Bot List -->
+    <div class="bots-sidebar" [class.collapsed]="selectedBot">
+      
+      <!-- Filters and Search -->
+      <mat-card class="filters-card">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput placeholder="Search bots..." [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)">
+          <button mat-icon-button matSuffix *ngIf="searchQuery" (click)="searchQuery = ''; onSearchChange('')">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-button-toggle-group [(value)]="statusFilter" (change)="onFilterChange()" class="status-filter">
+          <mat-button-toggle value="ALL">All</mat-button-toggle>
+          <mat-button-toggle [value]="BotStatus.ACTIVE">Active</mat-button-toggle>
+          <mat-button-toggle [value]="BotStatus.PAUSED">Paused</mat-button-toggle>
+          <mat-button-toggle [value]="BotStatus.STOPPED">Stopped</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <div class="sort-controls">
+          <mat-form-field appearance="outline" class="sort-field">
+            <mat-label>Sort by</mat-label>
+            <mat-select [(value)]="sortBy" (selectionChange)="onFilterChange()">
+              <mat-option value="created_at">Created Date</mat-option>
+              <mat-option value="name">Name</mat-option>
+              <mat-option value="pnl">P&L</mat-option>
+              <mat-option value="trades">Trades</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-icon-button (click)="onSortChange(sortBy)" matTooltip="Toggle sort direction">
+            <mat-icon>{{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+          </button>
+        </div>
+      </mat-card>
+
+      <!-- Bot List -->
+      <div class="bots-list" *ngIf="!loading">
+        <mat-card 
+          *ngFor="let bot of filteredBots" 
+          class="bot-card"
+          [class.selected]="selectedBot?.id === bot.id"
+          (click)="selectBot(bot)">
+          
+          <div class="bot-card-header">
+            <div class="bot-name-section">
+              <h3 class="bot-name">{{ bot.name }}</h3>
+              <span class="bot-symbol">{{ bot.symbol }}</span>
+            </div>
+            <mat-chip [class]="getStatusClass(bot.status)">
+              <mat-icon>{{ getStatusIcon(bot.status) }}</mat-icon>
+              {{ bot.status }}
+            </mat-chip>
+          </div>
+
+          <div class="bot-card-content">
+            <div class="bot-info-row">
+              <span class="label">Strategy:</span>
+              <span class="value">{{ bot.strategy_type.replace('_', ' ') }}</span>
+            </div>
+            <div class="bot-info-row">
+              <span class="label">Interval:</span>
+              <span class="value">{{ bot.interval }}</span>
+            </div>
+            <div class="bot-info-row">
+              <span class="label">P&L:</span>
+              <span class="value" [class]="getPnLClass(bot.total_pnl)">
+                {{ formatPnL(bot.total_pnl) }}
+              </span>
+            </div>
+            <div class="bot-info-row">
+              <span class="label">Trades:</span>
+              <span class="value">{{ bot.total_trades }} ({{ bot.winning_trades }}W / {{ bot.losing_trades }}L)</span>
+            </div>
+          </div>
+
+          <div class="bot-card-actions" (click)="$event.stopPropagation()">
+            <button mat-icon-button [matMenuTriggerFor]="botMenu" (click)="$event.stopPropagation()">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #botMenu="matMenu">
+              <button mat-menu-item *ngIf="bot.status !== BotStatus.ACTIVE" (click)="startBot(bot)">
+                <mat-icon>play_arrow</mat-icon>
+                <span>Start</span>
+              </button>
+              <button mat-menu-item *ngIf="bot.status === BotStatus.ACTIVE" (click)="pauseBot(bot)">
+                <mat-icon>pause</mat-icon>
+                <span>Pause</span>
+              </button>
+              <button mat-menu-item (click)="stopBot(bot)">
+                <mat-icon>stop</mat-icon>
+                <span>Stop</span>
+              </button>
+              <button mat-menu-item (click)="manualExecute(bot)">
+                <mat-icon>flash_on</mat-icon>
+                <span>Execute Now</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="emergencyStop(bot)" class="danger-action">
+                <mat-icon>warning</mat-icon>
+                <span>Emergency Stop</span>
+              </button>
+              <button mat-menu-item (click)="deleteBot(bot)" class="danger-action">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+        </mat-card>
+
+        <div class="empty-state" *ngIf="filteredBots.length === 0">
+          <mat-icon>search_off</mat-icon>
+          <p>No bots found</p>
+          <button mat-raised-button color="primary" (click)="openCreateModal()">
+            Create Your First Bot
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="loading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading bots...</p>
+      </div>
+    </div>
+
+    <!-- Right Panel - Bot Details -->
+    <div class="bot-details-panel" *ngIf="selectedBot">
+      
+      <!-- Bot Header -->
+      <mat-card class="bot-details-header">
+        <div class="details-header-content">
+          <div class="bot-title-section">
+            <button mat-icon-button (click)="selectedBot = null" class="back-btn">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <div>
+              <h2 class="bot-title">{{ selectedBot.name }}</h2>
+              <p class="bot-description">{{ selectedBot.description || 'No description' }}</p>
+            </div>
+          </div>
+
+          <div class="bot-controls">
+            <button mat-raised-button 
+                    *ngIf="selectedBot.status !== BotStatus.ACTIVE" 
+                    color="primary" 
+                    (click)="startBot(selectedBot)">
+              <mat-icon>play_arrow</mat-icon>
+              Start
+            </button>
+            <button mat-raised-button 
+                    *ngIf="selectedBot.status === BotStatus.ACTIVE" 
+                    color="accent" 
+                    (click)="pauseBot(selectedBot)">
+              <mat-icon>pause</mat-icon>
+              Pause
+            </button>
+            <button mat-raised-button (click)="stopBot(selectedBot)">
+              <mat-icon>stop</mat-icon>
+              Stop
+            </button>
+            <button mat-icon-button [matMenuTriggerFor]="detailsMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #detailsMenu="matMenu">
+              <button mat-menu-item (click)="manualExecute(selectedBot)">
+                <mat-icon>flash_on</mat-icon>
+                <span>Manual Execute</span>
+              </button>
+              <button mat-menu-item (click)="selectedTabIndex = 5">
+                <mat-icon>settings</mat-icon>
+                <span>Edit Settings</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="emergencyStop(selectedBot)" class="danger-action">
+                <mat-icon>warning</mat-icon>
+                <span>Emergency Stop</span>
+              </button>
+              <button mat-menu-item (click)="deleteBot(selectedBot)" class="danger-action">
+                <mat-icon>delete</mat-icon>
+                <span>Delete Bot</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <mat-tab-group [(selectedIndex)]="selectedTabIndex" class="details-tabs">
+          <mat-tab label="Overview">
+            <ng-template mat-tab-label>
+              <mat-icon>dashboard</mat-icon>
+              Overview
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Performance">
+            <ng-template mat-tab-label>
+              <mat-icon>analytics</mat-icon>
+              Performance
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Trades">
+            <ng-template mat-tab-label>
+              <mat-icon>swap_horiz</mat-icon>
+              Trades
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Logs">
+            <ng-template mat-tab-label>
+              <mat-icon>description</mat-icon>
+              Logs
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Backtest">
+            <ng-template mat-tab-label>
+              <mat-icon>history</mat-icon>
+              Backtest
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Settings">
+            <ng-template mat-tab-label>
+              <mat-icon>settings</mat-icon>
+              Settings
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Overview Tab -->
+        <app-bot-overview 
+          *ngIf="selectedTabIndex === 0" 
+          [bot]="selectedBot">
+        </app-bot-overview>
+
+        <!-- Performance Tab -->
+        <app-bot-performance 
+          *ngIf="selectedTabIndex === 1" 
+          [botId]="selectedBot.id">
+        </app-bot-performance>
+
+        <!-- Trades Tab -->
+        <app-bot-trades 
+          *ngIf="selectedTabIndex === 2" 
+          [botId]="selectedBot.id">
+        </app-bot-trades>
+
+        <!-- Logs Tab -->
+        <app-bot-logs 
+          *ngIf="selectedTabIndex === 3" 
+          [botId]="selectedBot.id">
+        </app-bot-logs>
+
+        <!-- Backtest Tab -->
+        <app-bot-backtests 
+          *ngIf="selectedTabIndex === 4" 
+          [botId]="selectedBot.id">
+        </app-bot-backtests>
+
+        <!-- Settings Tab -->
+        <app-bot-settings 
+          *ngIf="selectedTabIndex === 5" 
+          [bot]="selectedBot"
+          [showStrategyField]="false"
+          (botUpdated)="onBotUpdated($event)">
+        </app-bot-settings>
+      </div>
+    </div>
+
+    <!-- Empty State (when no bot selected) -->
+    <div class="empty-details" *ngIf="!selectedBot && !loading">
+      <mat-icon>smart_toy</mat-icon>
+      <h3>Select a bot to view details</h3>
+      <p>Choose a bot from the list or create a new one to get started</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create Bot Modal -->
+<ng-container *ngIf="showCreateModal">
+  <app-create-bot-modal 
+    [strategyTemplates]="strategyTemplates"
+    (botCreated)="onBotCreated()"
+    (close)="closeCreateModal()">
+  </app-create-bot-modal>
+</ng-container>

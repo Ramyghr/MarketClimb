@@ -1,0 +1,330 @@
+<!-- src/app/dashboard/bot-trading/bot-overview/bot-overview.component.html -->
+<div class="bot-overview-container">
+  
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading && !liveStatus">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading live data...</p>
+  </div>
+
+  <!-- Error State -->
+  <mat-card class="error-card" *ngIf="error">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+    <button mat-button (click)="refresh()">Retry</button>
+  </mat-card>
+
+  <!-- Main Content -->
+  <div class="overview-content" *ngIf="liveStatus">
+    
+    <!-- Bot Configuration Card -->
+    <mat-card class="config-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>settings</mat-icon>
+          Configuration
+        </mat-card-title>
+        <button mat-icon-button (click)="refresh()" class="refresh-btn">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="config-grid">
+          <div class="config-item">
+            <span class="label">Symbol</span>
+            <span class="value">{{ bot.symbol }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Strategy</span>
+            <span class="value">{{ bot.strategy_type.replace('_', ' ') }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Interval</span>
+            <span class="value">{{ bot.interval }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Position Size</span>
+            <span class="value">${{ bot.max_position_size.toFixed(2) }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Max Open Trades</span>
+            <span class="value">{{ bot.max_open_trades }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Stop Loss</span>
+            <span class="value">{{ bot.stop_loss_pct ? bot.stop_loss_pct + '%' : 'None' }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Take Profit</span>
+            <span class="value">{{ bot.take_profit_pct ? bot.take_profit_pct + '%' : 'None' }}</span>
+          </div>
+          <div class="config-item">
+            <span class="label">Leverage</span>
+            <span class="value">{{ bot.leverage }}x</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Position Limits Card -->
+    <mat-card class="limits-card" [class]="getLimitStatusClass(liveStatus.open_trades_limit_status)">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>{{ getLimitStatusIcon(liveStatus.open_trades_limit_status) }}</mat-icon>
+          Position Limits
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="limit-info">
+          <div class="limit-text">
+            <span class="limit-label">Open Positions</span>
+            <span class="limit-value">{{ liveStatus.open_trades_limit }}</span>
+          </div>
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="liveStatus.open_trades_percentage"
+            [class.warning]="liveStatus.open_trades_percentage >= 80"
+            [class.danger]="liveStatus.open_trades_percentage >= 100">
+          </mat-progress-bar>
+          <span class="limit-percentage">{{ liveStatus.open_trades_percentage }}% capacity</span>
+        </div>
+        
+        <mat-divider></mat-divider>
+
+        <div class="limit-status-message">
+          <mat-icon>info</mat-icon>
+          <span *ngIf="liveStatus.open_trades_limit_status === 'OK'">
+            You have {{ liveStatus.max_open_trades - liveStatus.open_trades_count }} position slots available
+          </span>
+          <span *ngIf="liveStatus.open_trades_limit_status === 'WARNING'">
+            ⚠️ Near capacity limit - {{ liveStatus.max_open_trades - liveStatus.open_trades_count }} slots remaining
+          </span>
+          <span *ngIf="liveStatus.open_trades_limit_status === 'LIMIT_REACHED'" class="text-danger">
+            🚫 Position limit reached! Close positions to allow new trades.
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Open Positions Card -->
+    <mat-card class="positions-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>account_balance_wallet</mat-icon>
+          Open Positions ({{ liveStatus.open_positions.count }})
+        </mat-card-title>
+        <span class="total-unrealized" [class]="getPnLClass(liveStatus.open_positions.total_unrealized_pnl)">
+          {{ formatPnL(liveStatus.open_positions.total_unrealized_pnl) }}
+        </span>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="positions-list" *ngIf="liveStatus.open_positions.positions.length > 0">
+          <div class="position-item" *ngFor="let pos of liveStatus.open_positions.positions">
+            <div class="position-header">
+              <div class="position-symbol">
+                <mat-icon>trending_up</mat-icon>
+                <span>{{ pos.symbol }}</span>
+              </div>
+              <button mat-icon-button (click)="closePosition(pos)" matTooltip="Close Position">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            
+            <div class="position-details">
+              <div class="detail-row">
+                <span class="label">Quantity:</span>
+                <span>{{ pos.quantity }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Entry:</span>
+                <span>${{ pos.entry_price.toFixed(2) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Current:</span>
+                <span>${{ pos.current_price.toFixed(2) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Duration:</span>
+                <span>{{ formatDuration(pos.duration_minutes) }}</span>
+              </div>
+              <div class="detail-row pnl-row">
+                <span class="label">Unrealized P&L:</span>
+                <span [class]="getPnLClass(pos.unrealized_pnl)">
+                  {{ formatPnL(pos.unrealized_pnl) }} ({{ formatPercentage(pos.unrealized_pnl_pct) }})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-positions" *ngIf="liveStatus.open_positions.positions.length === 0">
+          <mat-icon>info</mat-icon>
+          <p>No open positions</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Today's Stats Card -->
+    <mat-card class="today-stats-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>today</mat-icon>
+          Today's Performance
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <mat-icon>swap_horiz</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">Trades</span>
+              <span class="stat-value">{{ liveStatus.today_stats.trades }}</span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <mat-icon>trending_up</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">P&L</span>
+              <span class="stat-value" [class]="getPnLClass(liveStatus.today_stats.pnl)">
+                {{ formatPnL(liveStatus.today_stats.pnl) }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <mat-icon>trending_down</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">Daily Loss Used</span>
+              <span class="stat-value">
+                ${{ liveStatus.today_stats.daily_loss_used.toFixed(2) }} / ${{ liveStatus.today_stats.daily_loss_limit.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <mat-icon>hourglass_empty</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">Remaining Trades</span>
+              <span class="stat-value">{{ liveStatus.today_stats.remaining_trades }}</span>
+            </div>
+          </div>
+        </div>
+
+        <mat-progress-bar 
+          mode="determinate" 
+          [value]="(liveStatus.today_stats.daily_loss_used / liveStatus.today_stats.daily_loss_limit) * 100"
+          class="loss-limit-bar"
+          [class.danger]="(liveStatus.today_stats.daily_loss_used / liveStatus.today_stats.daily_loss_limit) * 100 > 80">
+        </mat-progress-bar>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Recent Activity Card -->
+    <mat-card class="activity-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>history</mat-icon>
+          Recent Activity
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="activity-list" *ngIf="liveStatus.recent_activity.length > 0">
+          <div class="activity-item" *ngFor="let activity of liveStatus.recent_activity">
+            <mat-icon [class]="getPnLClass(activity.pnl)">
+              {{ activity.pnl >= 0 ? 'trending_up' : 'trending_down' }}
+            </mat-icon>
+            <div class="activity-details">
+              <span class="activity-symbol">{{ activity.symbol }}</span>
+              <span class="activity-time">{{ activity.closed_at | date:'short' }}</span>
+            </div>
+            <div class="activity-pnl" [class]="getPnLClass(activity.pnl)">
+              <span class="pnl-amount">{{ formatPnL(activity.pnl) }}</span>
+              <span class="pnl-percent">{{ formatPercentage(activity.pnl_pct) }}</span>
+            </div>
+            <mat-chip class="exit-reason">{{ activity.exit_reason }}</mat-chip>
+          </div>
+        </div>
+
+        <div class="empty-activity" *ngIf="liveStatus.recent_activity.length === 0">
+          <mat-icon>info</mat-icon>
+          <p>No recent activity</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Overall Statistics Card -->
+    <mat-card class="overall-stats-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>analytics</mat-icon>
+          Overall Statistics
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="overall-stats-grid">
+          <div class="overall-stat">
+            <span class="label">Total Trades</span>
+            <span class="value">{{ liveStatus.overall_stats.total_trades }}</span>
+          </div>
+          <div class="overall-stat">
+            <span class="label">Winning Trades</span>
+            <span class="value text-success">{{ liveStatus.overall_stats.winning_trades }}</span>
+          </div>
+          <div class="overall-stat">
+            <span class="label">Losing Trades</span>
+            <span class="value text-danger">{{ liveStatus.overall_stats.losing_trades }}</span>
+          </div>
+          <div class="overall-stat">
+            <span class="label">Win Rate</span>
+            <span class="value">{{ liveStatus.overall_stats.win_rate.toFixed(1) }}%</span>
+          </div>
+          <div class="overall-stat">
+            <span class="label">Total P&L</span>
+            <span class="value" [class]="getPnLClass(liveStatus.overall_stats.total_pnl)">
+              {{ formatPnL(liveStatus.overall_stats.total_pnl) }}
+            </span>
+          </div>
+          <div class="overall-stat">
+            <span class="label">Total Fees</span>
+            <span class="value">${{ liveStatus.overall_stats.total_fees.toFixed(2) }}</span>
+          </div>
+          <div class="overall-stat">
+            <span class="label">Avg Position Duration</span>
+            <span class="value">{{ formatDuration(liveStatus.overall_stats.average_position_duration_minutes) }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Execution Info Card -->
+    <mat-card class="execution-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>schedule</mat-icon>
+          Execution Schedule
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="execution-info">
+          <div class="execution-item">
+            <span class="label">Last Execution:</span>
+            <span class="value">{{ liveStatus.last_execution ? (liveStatus.last_execution | date:'short') : 'Never' }}</span>
+          </div>
+          <div class="execution-item">
+            <span class="label">Next Execution:</span>
+            <span class="value">{{ liveStatus.next_execution ? (liveStatus.next_execution | date:'short') : 'N/A' }}</span>
+          </div>
+          <div class="execution-item">
+            <span class="label">Last Signal:</span>
+            <mat-chip [class.buy-signal]="liveStatus.last_signal === 'BUY'" 
+                      [class.sell-signal]="liveStatus.last_signal === 'SELL'">
+              {{ liveStatus.last_signal || 'None' }}
+            </mat-chip>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

@@ -1,0 +1,278 @@
+<!-- src/app/dashboard/bot-trading/bot-backtests/bot-backtests.component.html -->
+<div class="bot-backtests">
+  
+  <!-- Header -->
+  <div class="backtests-header">
+    <h3>
+      <mat-icon>science</mat-icon>
+      Backtest Analysis
+    </h3>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="showBacktestForm = true" *ngIf="!showBacktestForm">
+        <mat-icon>add</mat-icon>
+        Run New Backtest
+      </button>
+      <button mat-stroked-button (click)="refreshBacktests()" *ngIf="!showBacktestForm">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Backtest Form -->
+  <mat-card class="backtest-form-card" *ngIf="showBacktestForm">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>settings</mat-icon>
+        Configure Backtest
+      </mat-card-title>
+      <button mat-icon-button (click)="cancelBacktest()" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="backtestForm" class="backtest-form">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>Start Date</mat-label>
+            <input matInput type="date" formControlName="start_date" [max]="maxDate">
+            <mat-icon matPrefix>calendar_today</mat-icon>
+            <mat-error *ngIf="backtestForm.get('start_date')?.hasError('required')">
+              Start date is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>End Date</mat-label>
+            <input matInput type="date" formControlName="end_date" [max]="maxDate">
+            <mat-icon matPrefix>calendar_today</mat-icon>
+            <mat-error *ngIf="backtestForm.get('end_date')?.hasError('required')">
+              End date is required
+            </mat-error>
+            <mat-error *ngIf="backtestForm.get('end_date')?.hasError('invalidRange')">
+              End date must be after start date
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="capital-field">
+            <mat-label>Initial Capital</mat-label>
+            <input matInput type="number" formControlName="initial_capital" step="100">
+            <span matPrefix>$&nbsp;</span>
+            <mat-error *ngIf="backtestForm.get('initial_capital')?.hasError('required')">
+              Initial capital is required
+            </mat-error>
+            <mat-error *ngIf="backtestForm.get('initial_capital')?.hasError('min')">
+              Minimum $100
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-button (click)="cancelBacktest()">Cancel</button>
+          <button mat-raised-button color="primary" 
+                  (click)="runBacktest()" 
+                  [disabled]="backtestForm.invalid || runningBacktest">
+            <mat-spinner diameter="20" *ngIf="runningBacktest" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            <mat-icon *ngIf="!runningBacktest">play_arrow</mat-icon>
+            {{ runningBacktest ? 'Running...' : 'Run Backtest' }}
+          </button>
+        </div>
+
+        <div class="form-info">
+          <mat-icon>info</mat-icon>
+          <p>Backtest will simulate your bot's strategy using historical market data for the selected period.</p>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Running Backtest Progress -->
+  <mat-card class="progress-card" *ngIf="runningBacktest && !showBacktestForm">
+    <mat-card-content>
+      <div class="progress-content">
+        <mat-spinner diameter="50"></mat-spinner>
+        <div class="progress-text">
+          <h4>Running Backtest...</h4>
+          <p>This may take a few moments depending on the date range</p>
+        </div>
+      </div>
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Error Alert -->
+  <mat-card class="error-alert" *ngIf="error">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+    <button mat-icon-button (click)="clearError()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </mat-card>
+
+  <!-- Success Alert -->
+  <mat-card class="success-alert" *ngIf="successMessage">
+    <mat-icon>check_circle</mat-icon>
+    <span>{{ successMessage }}</span>
+    <button mat-icon-button (click)="successMessage = null">
+      <mat-icon>close</mat-icon>
+    </button>
+  </mat-card>
+
+  <!-- Backtests List -->
+  <div class="backtests-content" *ngIf="!loading && !showBacktestForm">
+    
+    <!-- Selected Backtest Details -->
+    <div class="backtest-details" *ngIf="selectedBacktest">
+      <mat-card class="details-card">
+        <mat-card-header>
+          <div class="details-header-content">
+            <div>
+              <mat-card-title>
+                <mat-icon>analytics</mat-icon>
+                Backtest Results
+              </mat-card-title>
+              <mat-card-subtitle>
+                {{ selectedBacktest.start_date | date:'mediumDate' }} - {{ selectedBacktest.end_date | date:'mediumDate' }}
+              </mat-card-subtitle>
+            </div>
+            <button mat-icon-button (click)="selectedBacktest = null">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content>
+          <app-backtest-results [results]="selectedBacktest"></app-backtest-results>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Backtests List Grid -->
+    <div class="backtests-list" *ngIf="!selectedBacktest">
+      <mat-card *ngFor="let backtest of backtests" class="backtest-card" (click)="viewBacktest(backtest)">
+        <mat-card-header>
+          <div class="backtest-header">
+            <div class="backtest-dates">
+              <mat-icon>calendar_today</mat-icon>
+              <div>
+                <div class="date-range">
+                  {{ backtest.start_date | date:'mediumDate' }} - {{ backtest.end_date | date:'mediumDate' }}
+                </div>
+                <div class="backtest-time">
+                  Run: {{ backtest.started_at | date:'short' }}
+                </div>
+              </div>
+            </div>
+            <mat-chip [color]="getStatusColor(backtest.status)">
+              <mat-icon>{{ getStatusIcon(backtest.status) }}</mat-icon>
+              {{ backtest.status }}
+            </mat-chip>
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="backtest-summary">
+            <!-- Main Performance Metric -->
+            <div class="main-metric">
+              <div class="metric-label">Total Return</div>
+              <div class="metric-value" [class.positive]="backtest.total_return > 0" 
+                   [class.negative]="backtest.total_return < 0">
+                {{ backtest.total_return | currency }}
+              </div>
+              <div class="metric-percentage" [class.positive]="backtest.total_return_pct > 0" 
+                   [class.negative]="backtest.total_return_pct < 0">
+                {{ formatPercentage(backtest.total_return_pct) }}
+              </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+              <div class="stat-item">
+                <mat-icon class="stat-icon">swap_horiz</mat-icon>
+                <div class="stat-content">
+                  <div class="stat-label">Trades</div>
+                  <div class="stat-value">{{ backtest.total_trades }}</div>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <mat-icon class="stat-icon success">emoji_events</mat-icon>
+                <div class="stat-content">
+                  <div class="stat-label">Win Rate</div>
+                  <div class="stat-value">{{ backtest.win_rate.toFixed(1) }}%</div>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <mat-icon class="stat-icon info">trending_up</mat-icon>
+                <div class="stat-content">
+                  <div class="stat-label">Sharpe Ratio</div>
+                  <div class="stat-value">{{ backtest.sharpe_ratio.toFixed(2) }}</div>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <mat-icon class="stat-icon danger">trending_down</mat-icon>
+                <div class="stat-content">
+                  <div class="stat-label">Max Drawdown</div>
+                  <div class="stat-value">{{ backtest.max_drawdown_pct.toFixed(2) }}%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trade Breakdown -->
+            <div class="trade-breakdown">
+              <div class="breakdown-item win">
+                <mat-icon>check_circle</mat-icon>
+                <span>{{ backtest.winning_trades }} Wins</span>
+              </div>
+              <div class="breakdown-item loss">
+                <mat-icon>cancel</mat-icon>
+                <span>{{ backtest.losing_trades }} Losses</span>
+              </div>
+            </div>
+
+            <!-- Capital Info -->
+            <div class="capital-info">
+              <div class="capital-item">
+                <span class="label">Initial:</span>
+                <span class="value">{{ backtest.initial_capital | currency }}</span>
+              </div>
+              <mat-icon>arrow_forward</mat-icon>
+              <div class="capital-item">
+                <span class="label">Final:</span>
+                <span class="value" [class.positive]="backtest.final_capital > backtest.initial_capital"
+                     [class.negative]="backtest.final_capital < backtest.initial_capital">
+                  {{ backtest.final_capital | currency }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button mat-button color="primary">
+            <mat-icon>visibility</mat-icon>
+            View Details
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="backtests.length === 0">
+        <mat-icon>info</mat-icon>
+        <h4>No Backtests Yet</h4>
+        <p>Run your first backtest to see how your bot would have performed with historical data</p>
+        <button mat-raised-button color="primary" (click)="showBacktestForm = true">
+          <mat-icon>add</mat-icon>
+          Run Your First Backtest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading backtests...</p>
+  </div>
+</div>
