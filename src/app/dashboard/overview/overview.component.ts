@@ -1,5 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { PortfolioService } from '../../core/services/portfolio/portfolio.service';
+import { MarketDataService, QuoteResponse } from '../../services/market-data.service';
+import { NewsService } from '../../services/news.service';
+import { WatchlistService } from '../../services/watchlist.service';
 
 interface MarketIndex {
   symbol: string;
@@ -10,7 +16,7 @@ interface MarketIndex {
 }
 
 interface Trade {
-  id: string;
+  id?: number;
   symbol: string;
   type: 'buy' | 'sell';
   shares: number;
@@ -47,11 +53,12 @@ interface WatchlistItem {
 }
 
 interface NewsItem {
-  id: string;
+  id: number;
   title: string;
   source: string;
   time: string;
   sentiment: 'positive' | 'negative' | 'neutral';
+  published_at?: string;
 }
 
 @Component({
@@ -59,82 +66,280 @@ interface NewsItem {
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.css']
 })
-export class OverviewComponent implements OnInit {
+export class OverviewComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   
   // Portfolio Summary
-  totalBalance = 125430.50;
-  totalProfit = 12543.30;
-  totalProfitPercent = 11.1;
-  dayChange = 2341.20;
-  dayChangePercent = 1.9;
+  totalBalance = 0;
+  totalProfit = 0;
+  totalProfitPercent = 0;
+  dayChange = 0;
+  dayChangePercent = 0;
+  marginUsed = 0;
+  marginAvailable = 0;
 
   // Market Indices
-  marketIndices: MarketIndex[] = [
-    { symbol: 'SPY', name: 'S&P 500', price: 452.31, change: 5.21, changePercent: 1.17 },
-    { symbol: 'QQQ', name: 'NASDAQ', price: 378.92, change: -2.14, changePercent: -0.56 },
-    { symbol: 'DIA', name: 'DOW', price: 351.24, change: 3.45, changePercent: 0.99 },
-    { symbol: 'IWM', name: 'Russell 2000', price: 189.67, change: 1.23, changePercent: 0.65 }
-  ];
+  marketIndices: MarketIndex[] = [];
 
   // Recent Trades
-  recentTrades: Trade[] = [
-    { id: '1', symbol: 'AAPL', type: 'buy', shares: 50, price: 178.50, total: 8925.00, date: new Date(Date.now() - 3600000), profit: 125.50 },
-    { id: '2', symbol: 'TSLA', type: 'sell', shares: 20, price: 242.80, total: 4856.00, date: new Date(Date.now() - 7200000), profit: 342.80 },
-    { id: '3', symbol: 'MSFT', type: 'buy', shares: 30, price: 378.20, total: 11346.00, date: new Date(Date.now() - 10800000), profit: -45.30 },
-    { id: '4', symbol: 'GOOGL', type: 'buy', shares: 15, price: 140.50, total: 2107.50, date: new Date(Date.now() - 14400000), profit: 78.90 },
-    { id: '5', symbol: 'NVDA', type: 'sell', shares: 25, price: 485.30, total: 12132.50, date: new Date(Date.now() - 18000000), profit: 1245.75 }
-  ];
+  recentTrades: Trade[] = [];
 
   // Active Positions
-  activePositions: Position[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', shares: 150, avgPrice: 175.30, currentPrice: 178.50, totalValue: 26775.00, profit: 480.00, profitPercent: 1.83 },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', shares: 80, avgPrice: 372.50, currentPrice: 378.20, totalValue: 30256.00, profit: 456.00, profitPercent: 1.53 },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', shares: 50, avgPrice: 138.20, currentPrice: 140.50, totalValue: 7025.00, profit: 115.00, profitPercent: 1.66 },
-    { symbol: 'TSLA', name: 'Tesla Inc.', shares: 40, avgPrice: 238.90, currentPrice: 242.80, totalValue: 9712.00, profit: 156.00, profitPercent: 1.63 }
-  ];
+  activePositions: Position[] = [];
 
   // Top Gainers & Losers
-  topGainers: TopMover[] = [
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 485.30, change: 28.45, changePercent: 6.23 },
-    { symbol: 'AMD', name: 'Advanced Micro', price: 142.80, change: 7.90, changePercent: 5.86 },
-    { symbol: 'COIN', name: 'Coinbase', price: 168.50, change: 8.23, changePercent: 5.14 }
-  ];
-
-  topLosers: TopMover[] = [
-    { symbol: 'PYPL', name: 'PayPal', price: 58.40, change: -3.21, changePercent: -5.21 },
-    { symbol: 'SNAP', name: 'Snap Inc.', price: 9.87, change: -0.48, changePercent: -4.63 },
-    { symbol: 'RIVN', name: 'Rivian', price: 18.23, change: -0.76, changePercent: -4.00 }
-  ];
+  topGainers: TopMover[] = [];
+  topLosers: TopMover[] = [];
 
   // Watchlist
-  watchlist: WatchlistItem[] = [
-    { symbol: 'BTC', price: 64235.50, change: 1234.20, changePercent: 1.96 },
-    { symbol: 'ETH', price: 3456.80, change: -45.30, changePercent: -1.29 },
-    { symbol: 'SPY', price: 452.31, change: 5.21, changePercent: 1.17 },
-    { symbol: 'QQQ', price: 378.92, change: -2.14, changePercent: -0.56 }
-  ];
+  watchlist: WatchlistItem[] = [];
 
   // Market News
-  marketNews: NewsItem[] = [
-    { id: '1', title: 'Federal Reserve Signals Rate Cut in Q4', source: 'Reuters', time: '15m ago', sentiment: 'positive' },
-    { id: '2', title: 'Tech Stocks Rally on AI Investment News', source: 'Bloomberg', time: '1h ago', sentiment: 'positive' },
-    { id: '3', title: 'Oil Prices Surge on Supply Concerns', source: 'CNBC', time: '2h ago', sentiment: 'negative' },
-    { id: '4', title: 'Bitcoin Breaks $65K Resistance Level', source: 'CoinDesk', time: '3h ago', sentiment: 'positive' }
-  ];
+  marketNews: NewsItem[] = [];
 
   // Chart data for portfolio performance
   performanceChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    values: [100000, 105000, 108000, 112000, 118000, 125430]
+    labels: [] as string[],
+    values: [] as number[]
   };
 
-  constructor(private router: Router) { }
+  // Loading states
+  isLoadingPortfolio = true;
+  isLoadingMarket = true;
+  isLoadingNews = true;
+  isLoadingWatchlist = true;
+
+  constructor(
+    private router: Router,
+    private portfolioService: PortfolioService,
+    private marketDataService: MarketDataService,
+    private newsService: NewsService,
+    private watchlistService: WatchlistService
+  ) {}
 
   ngOnInit(): void {
-    // TODO: Load real data from services
-    // this.loadPortfolioData();
-    // this.loadMarketData();
-    // this.loadRecentTrades();
+    this.loadPortfolioData();
+    this.loadMarketIndices();
+    this.loadNews();
+    this.loadWatchlist();
+    
+    // Auto-refresh every 30 seconds
+    this.setupAutoRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ============= DATA LOADING =============
+
+  loadPortfolioData(): void {
+    this.isLoadingPortfolio = true;
+
+    // Subscribe to portfolio overview
+    this.portfolioService.overview$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(overview => {
+        if (overview) {
+          this.totalBalance = overview.total_value || 0;
+          this.totalProfit = overview.total_pnl || 0;
+          this.totalProfitPercent = overview.total_value > 0 
+            ? (overview.total_pnl / overview.total_value) * 100 
+            : 0;
+          this.dayChange = overview.today_pnl || 0;
+          this.dayChangePercent = overview.today_pnl_pct || 0;
+          this.marginUsed = overview.margin_used || 0;
+          this.marginAvailable = overview.margin_available || 0;
+          this.isLoadingPortfolio = false;
+        }
+      });
+
+    // Subscribe to holdings for active positions
+    this.portfolioService.holdings$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(holdings => {
+        this.activePositions = holdings.slice(0, 4).map(h => ({
+          symbol: h.symbol,
+          name: this.getCompanyName(h.symbol),
+          shares: h.quantity,
+          avgPrice: h.avg_cost,
+          currentPrice: h.current_price,
+          totalValue: h.market_value,
+          profit: h.unrealized_pnl,
+          profitPercent: h.unrealized_pnl_pct
+        }));
+      });
+
+    // Subscribe to transactions for recent trades
+    this.portfolioService.transactions$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(transactions => {
+        this.recentTrades = transactions.slice(0, 5).map(t => ({
+          id: t.id,
+          symbol: t.symbol,
+          type: t.side,
+          shares: t.quantity,
+          price: t.price,
+          total: t.total_amount || (t.quantity * t.price),
+          date: new Date(t.date),
+          profit: this.calculateTradeProfit(t)
+        }));
+      });
+
+    // Subscribe to performance for chart
+    this.portfolioService.performance$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(performance => {
+        if (performance.length > 0) {
+          this.performanceChartData = {
+            labels: performance.map(p => {
+              const date = new Date(p.date);
+              return date.toLocaleDateString('en-US', { month: 'short' });
+            }),
+            values: performance.map(p => p.value)
+          };
+        }
+      });
+
+    // Load initial data
+    this.portfolioService.loadAll();
+  }
+
+  loadMarketIndices(): void {
+    this.isLoadingMarket = true;
+    
+    const indices = [
+      { symbol: 'SPY', name: 'S&P 500', assetClass: 'STOCK' },
+      { symbol: 'QQQ', name: 'NASDAQ', assetClass: 'STOCK' },
+      { symbol: 'DIA', name: 'DOW', assetClass: 'STOCK' },
+      { symbol: 'IWM', name: 'Russell 2000', assetClass: 'STOCK' }
+    ];
+
+    const symbolsData = indices.map(idx => ({
+      symbol: idx.symbol,
+      asset_class: idx.assetClass
+    }));
+
+    this.marketDataService.getMixedQuotes(symbolsData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.marketIndices = response.quotes.map((quote, index) => {
+            // Calculate change and change_percent from the quote data
+            const change = this.calculateChange(quote);
+            const changePercent = this.calculateChangePercent(quote);
+
+            return {
+              symbol: quote.symbol,
+              name: indices[index].name,
+              price: quote.close,
+              change: change,
+              changePercent: changePercent
+            };
+          });
+          this.isLoadingMarket = false;
+        },
+        error: (error) => {
+          console.error('Error loading market indices:', error);
+          this.isLoadingMarket = false;
+          // Set default values on error
+          this.marketIndices = indices.map(idx => ({
+            symbol: idx.symbol,
+            name: idx.name,
+            price: 0,
+            change: 0,
+            changePercent: 0
+          }));
+        }
+      });
+  }
+
+  loadNews(): void {
+    this.isLoadingNews = true;
+    this.newsService.getFinancialNews('stock market', 'en', 4)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (articles) => {
+          this.marketNews = articles.map(article => ({
+            id: article.id,
+            title: article.title,
+            source: article.source || 'Unknown',
+            time: this.getTimeAgo(new Date(article.published_at || article.created_at)),
+            sentiment: (article.sentiment?.toLowerCase() as 'positive' | 'negative' | 'neutral') || 'neutral',
+            published_at: article.published_at
+          }));
+          this.isLoadingNews = false;
+        },
+        error: (error) => {
+          console.error('Error loading news:', error);
+          this.isLoadingNews = false;
+          this.marketNews = [];
+        }
+      });
+  }
+
+  loadWatchlist(): void {
+    this.isLoadingWatchlist = true;
+    this.watchlistService.getWatchlists()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (watchlists) => {
+          if (watchlists.length > 0) {
+            const firstWatchlist = watchlists[0];
+            
+            // Extract symbols and get quotes
+            const items = firstWatchlist.items.slice(0, 4);
+            
+            this.watchlist = items.map(item => {
+              const quote = item.quotes && item.quotes.length > 0 ? item.quotes[0] : null;
+              return {
+                symbol: item.symbol,
+                price: quote?.price || 0,
+                change: quote?.change || 0,
+                changePercent: quote?.change_percent || 0
+              };
+            });
+          }
+          this.isLoadingWatchlist = false;
+        },
+        error: (error) => {
+          console.error('Error loading watchlist:', error);
+          this.isLoadingWatchlist = false;
+          this.watchlist = [];
+        }
+      });
+  }
+
+  // ============= AUTO REFRESH =============
+
+  setupAutoRefresh(): void {
+    setInterval(() => {
+      this.portfolioService.refresh();
+      this.loadMarketIndices();
+    }, 30000); // Refresh every 30 seconds
+  }
+
+  // ============= HELPER METHODS =============
+
+  /**
+   * Calculate change from quote data (close - open)
+   */
+  private calculateChange(quote: QuoteResponse): number {
+    if (quote.open && quote.close) {
+      return quote.close - quote.open;
+    }
+    return 0;
+  }
+
+  /**
+   * Calculate change percent from quote data
+   */
+  private calculateChangePercent(quote: QuoteResponse): number {
+    if (quote.open && quote.close && quote.open > 0) {
+      return ((quote.close - quote.open) / quote.open) * 100;
+    }
+    return 0;
   }
 
   getTimeAgo(date: Date): string {
@@ -145,6 +350,56 @@ export class OverviewComponent implements OnInit {
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     return `${Math.floor(seconds / 86400)}d ago`;
   }
+
+  getCompanyName(symbol: string): string {
+    const companies: { [key: string]: string } = {
+      'AAPL': 'Apple Inc.',
+      'MSFT': 'Microsoft Corp.',
+      'GOOGL': 'Alphabet Inc.',
+      'TSLA': 'Tesla Inc.',
+      'NVDA': 'NVIDIA Corp.',
+      'AMZN': 'Amazon.com Inc.',
+      'META': 'Meta Platforms Inc.',
+      'BTC': 'Bitcoin',
+      'ETH': 'Ethereum'
+    };
+    return companies[symbol] || symbol;
+  }
+
+  calculateTradeProfit(transaction: any): number {
+    // This would need more sophisticated logic to calculate actual profit
+    // For now, return a placeholder or 0
+    return 0;
+  }
+
+  getSentimentIcon(sentiment: string): string {
+    switch(sentiment) {
+      case 'positive': return '📈';
+      case 'negative': return '📉';
+      default: return '➖';
+    }
+  }
+
+  getSentimentClass(sentiment: string): string {
+    return `sentiment-${sentiment}`;
+  }
+
+  get chartPoints(): string {
+    if (!this.performanceChartData.values.length) return '';
+    
+    const values = this.performanceChartData.values;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    
+    return values.map((val, i) => {
+      const x = (i / (values.length - 1)) * 400;
+      const y = 80 - ((val - min) / range) * 60;
+      return `${x},${y}`;
+    }).join(' ');
+  }
+
+  // ============= NAVIGATION =============
 
   navigateToTrade(symbol?: string): void {
     if (symbol) {
@@ -163,26 +418,6 @@ export class OverviewComponent implements OnInit {
   }
 
   viewAllNews(): void {
-    // Open news overlay
-    console.log('Opening news overlay...');
+    this.router.navigate(['/dashboard/news']);
   }
-
-  getSentimentIcon(sentiment: string): string {
-    switch(sentiment) {
-      case 'positive': return '📈';
-      case 'negative': return '📉';
-      default: return '➖';
-    }
-  }
-
-  getSentimentClass(sentiment: string): string {
-    return `sentiment-${sentiment}`;
-  }
-  
-  get chartPoints(): string {
-  return this.performanceChartData.labels
-    .map((_, i) => `${i * 80},${80 - (this.performanceChartData.values[i] - 95000) / 500}`)
-    .join(' ');
-}
-
 }

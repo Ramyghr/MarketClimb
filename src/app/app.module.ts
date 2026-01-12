@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common'; // ADD THIS
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { TradeComponent } from './dashboard/trade/trade.component';
@@ -57,6 +58,12 @@ import { BotBacktestsComponent } from './dashboard/bot-trading/bot-backtests/bot
 import { BacktestResultsComponent } from './dashboard/bot-trading/backtest-results/backtest-results.component';
 import { BotSettingsComponent } from './dashboard/bot-trading/bot-settings/bot-settings.component';
 
+// NEW Components (remove standalone: true from these components first!)
+import { MarketSummaryComponent } from './dashboard/market-summary/market-summary.component';
+import { NewsSentimentComponent } from './dashboard/news-sentiment/news-sentiment.component';
+import { SentimentChartComponent } from './dashboard/sentiment-chart/sentiment-chart.component';
+import { TrendsComponent } from './dashboard/trends/trends.component';
+
 // Angular Material Modules
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -94,7 +101,7 @@ const routes: Routes = [
       { path: 'learning', component: LearningComponent },
       { path: 'game', component: GamificationComponent },
       { path: 'news', component: NewsComponent },
-      { path: 'bot-trading', component: BotTradingComponent }, // NEW: Bot Trading Route
+      { path: 'bot-trading', component: BotTradingComponent },
       { path: 'crisis-simulator', component: CrisisSimulatorComponent },
       { path: 'crisis-admin', component: CrisisAdminComponent },
       { 
@@ -102,6 +109,11 @@ const routes: Routes = [
         component: CrisisTradingComponent,
         canActivate: [tradingGuard]
       },
+      // NEW: Routes for your new components
+      { path: 'market-summary', component: MarketSummaryComponent },
+      { path: 'news-sentiment', component: NewsSentimentComponent },
+      { path: 'sentiment-chart', component: SentimentChartComponent },
+      { path: 'trends', component: TrendsComponent },
       { path: '', redirectTo: 'overview', pathMatch: 'full' }
     ]
   },
@@ -173,7 +185,13 @@ const routes: Routes = [
     BotLogsComponent,
     BotBacktestsComponent,
     BacktestResultsComponent,
-    BotSettingsComponent
+    BotSettingsComponent,
+    
+    // NEW Components
+    MarketSummaryComponent,
+    NewsSentimentComponent,
+    SentimentChartComponent,
+    TrendsComponent
   ],
   imports: [
     BrowserModule,
@@ -183,6 +201,7 @@ const routes: Routes = [
     HttpClientModule,
     RouterModule.forRoot(routes),
     NgbModule,
+    CommonModule, // ADD THIS - Provides common directives like ngClass, ngIf, ngFor, pipes like date, number, currency
     
     // Angular Material Modules
     MatButtonModule,

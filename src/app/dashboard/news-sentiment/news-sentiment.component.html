@@ -1,0 +1,77 @@
+<div class="news-sentiment-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>newspaper</mat-icon>
+        Analyse des Actualités Financières
+      </mat-card-title>
+      <button mat-icon-button (click)="loadAnalyses()" [disabled]="loading">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </mat-card-header>
+  </mat-card>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="60"></mat-spinner>
+    <p>Analyse des sentiments en cours...</p>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadAnalyses()">
+      Réessayer
+    </button>
+  </div>
+
+  <div class="news-grid" *ngIf="!loading && !error && analyses.length > 0">
+    <mat-card *ngFor="let analysis of analyses" class="news-card">
+      <div class="sentiment-badge" [ngClass]="getSentimentClass(analysis.sentiment.label)">
+        <mat-icon>{{ getSentimentIcon(analysis.sentiment.label) }}</mat-icon>
+        <span>{{ analysis.sentiment.label | uppercase }}</span>
+        <span class="score">{{ getScorePercentage(analysis.sentiment.score) }}%</span>
+      </div>
+
+      <div class="article-image" *ngIf="analysis.article.image_url">
+        <img [src]="analysis.article.image_url" [alt]="analysis.article.title" />
+      </div>
+
+      <mat-card-content>
+        <div class="article-source">
+          <mat-icon>source</mat-icon>
+          {{ analysis.article.source }}
+        </div>
+
+        <h3 class="article-title">{{ analysis.article.title }}</h3>
+
+        <p class="article-description" *ngIf="analysis.article.description">
+          {{ analysis.article.description }}
+        </p>
+
+        <div class="keywords" *ngIf="analysis.keywords.length > 0">
+          <mat-chip-set>
+            <mat-chip *ngFor="let keyword of analysis.keywords">
+              {{ keyword }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+
+        <div class="entities" *ngIf="analysis.entities.length > 0">
+          <mat-icon>business</mat-icon>
+          <span>{{ analysis.entities.join(', ') }}</span>
+        </div>
+
+        <div class="article-footer">
+          <span class="publish-date">
+            <mat-icon>schedule</mat-icon>
+            {{ analysis.article.published_at | date:'short' }}
+          </span>
+          <button mat-raised-button color="primary" (click)="openArticle(analysis.article.url)">
+            <mat-icon>open_in_new</mat-icon>
+            Lire l'article
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

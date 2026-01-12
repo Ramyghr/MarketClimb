@@ -1,6 +1,5 @@
 <div class="sidebar">
   <div class="sidebar-content">
-
     <!-- Logo section -->
     <div class="sidebar-logo">
       <img src="assets/img/LOGO.png" alt="Market Climb Logo" class="logo-img">
@@ -8,33 +7,141 @@
 
     <!-- Menu -->
     <ul class="menu">
-      <li routerLink="/dashboard/overview" routerLinkActive="active">
-        <i class="nc-icon nc-paper"></i>
-        <span class="menu-text">overview</span>
-      </li>
+      <!-- Overview & Trade Section -->
+      <div class="menu-section">
+        <div class="menu-header" (click)="toggleSection('dashboard')">
+          <i class="nc-icon nc-bank"></i>
+          <span class="menu-text">Dashboard</span>
+          <i class="nc-icon nc-minimal-down section-arrow" [ngClass]="{'rotated': !expandedSections['dashboard']}"></i>
+        </div>
+        <div class="section-items" *ngIf="expandedSections['dashboard']">
+          <li class="menu-item" routerLink="/dashboard/overview" routerLinkActive="active">
+            <i class="nc-icon nc-bank"></i>
+            <span class="menu-text">Overview</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/trade" routerLinkActive="active">
+            <i class="nc-icon nc-chart-bar-32"></i>
+            <span class="menu-text">Trade</span>
+          </li>
+        </div>
+      </div>
       
-      <li routerLink="/dashboard/trade" routerLinkActive="active">
-        <i class="nc-icon nc-chart-bar-32"></i>
-        <span class="menu-text">Trade</span>
-      </li>
+      <!-- Trading Section -->
+      <div class="menu-section">
+        <div class="menu-header" (click)="toggleSection('trading')">
+          <i class="nc-icon nc-chart-bar-32"></i>
+          <span class="menu-text">Trading</span>
+          <i class="nc-icon nc-minimal-down section-arrow" [ngClass]="{'rotated': !expandedSections['trading']}"></i>
+        </div>
+        <div class="section-items" *ngIf="expandedSections['trading']">
+          <li class="menu-item" routerLink="/dashboard/bot-trading" routerLinkActive="active">
+            <i class="nc-icon nc-settings-gear-65"></i>
+            <span class="menu-text">Bot Trading</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/crisis-simulator" routerLinkActive="active">
+            <i class="nc-icon nc-alert-circle-i"></i>
+            <span class="menu-text">Crisis Simulator</span>
+          </li>
+          
+          <!-- Conditionally show Crisis Admin for admin users -->
+          <li class="menu-item" *ngIf="isAdmin" routerLink="/dashboard/crisis-admin" routerLinkActive="active">
+            <i class="nc-icon nc-settings-gear-65"></i>
+            <span class="menu-text">Crisis Admin</span>
+          </li>
+        </div>
+      </div>
       
-      <li routerLink="/dashboard/account" routerLinkActive="active">
-        <i class="nc-icon nc-single-02"></i>
-        <span class="menu-text">Account & Settings</span>
-      </li>
-      <li routerLink="/dashboard/community" routerLinkActive="active">
-        <i class="nc-icon nc-chat-33"></i>
-        <span class="menu-text">Community Hub</span>
-      </li>
-      <li routerLink="/dashboard/learning" routerLinkActive="active">
-        <i class="nc-icon nc-book-bookmark"></i>
-        <span class="menu-text">Learning Center</span>
-      </li>
-      <li routerLink="/dashboard/game" routerLinkActive="active">
-        <i class="nc-icon nc-bulb-63"></i>
-        <span class="menu-text">game</span>
-      </li>
+      <!-- Market Analytics Section -->
+      <div class="menu-section">
+        <div class="menu-header" (click)="toggleSection('market')">
+          <i class="nc-icon nc-chart-bar-32"></i>
+          <span class="menu-text">Market Analytics</span>
+          <i class="nc-icon nc-minimal-down section-arrow" [ngClass]="{'rotated': !expandedSections['market']}"></i>
+        </div>
+        <div class="section-items" *ngIf="expandedSections['market']">
+          <li class="menu-item" routerLink="/dashboard/market-summary" routerLinkActive="active">
+            <i class="nc-icon nc-money-coins"></i>
+            <span class="menu-text">Market Summary</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/news-sentiment" routerLinkActive="active">
+            <i class="nc-icon nc-satisfied"></i>
+            <span class="menu-text">News Sentiment</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/sentiment-chart" routerLinkActive="active">
+            <i class="nc-icon nc-chart-pie-36"></i>
+            <span class="menu-text">Sentiment Chart</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/trends" routerLinkActive="active">
+            <i class="nc-icon nc-chart-bar-32"></i>
+            <span class="menu-text">Market Trends</span>
+          </li>
+          
+          
+        </div>
+      </div>
+      
+      <!-- Community & Learning Section -->
+      <div class="menu-section">
+        <div class="menu-header" (click)="toggleSection('community')">
+          <i class="nc-icon nc-chat-33"></i>
+          <span class="menu-text">Community & Learning</span>
+          <i class="nc-icon nc-minimal-down section-arrow" [ngClass]="{'rotated': !expandedSections['community']}"></i>
+        </div>
+        <div class="section-items" *ngIf="expandedSections['community']">
+          <li class="menu-item" routerLink="/dashboard/community" routerLinkActive="active">
+            <i class="nc-icon nc-chat-33"></i>
+            <span class="menu-text">Community Hub</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/learning" routerLinkActive="active">
+            <i class="nc-icon nc-book-bookmark"></i>
+            <span class="menu-text">Learning Center</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/game" routerLinkActive="active">
+            <i class="nc-icon nc-controller-modern"></i>
+            <span class="menu-text">Game Center</span>
+          </li>
+        </div>
+      </div>
+      
+      <!-- Account Section -->
+      <div class="menu-section">
+        <div class="menu-header" (click)="toggleSection('account')">
+          <i class="nc-icon nc-single-02"></i>
+          <span class="menu-text">Account</span>
+          <i class="nc-icon nc-minimal-down section-arrow" [ngClass]="{'rotated': !expandedSections['account']}"></i>
+        </div>
+        <div class="section-items" *ngIf="expandedSections['account']">
+          <li class="menu-item" routerLink="/dashboard/account" routerLinkActive="active">
+            <i class="nc-icon nc-single-02"></i>
+            <span class="menu-text">Account & Settings</span>
+          </li>
+          
+          <li class="menu-item" routerLink="/dashboard/portfolio" routerLinkActive="active">
+            <i class="nc-icon nc-briefcase-24"></i>
+            <span class="menu-text">Portfolio</span>
+          </li>
+          
+          
+        </div>
+      </div>
     </ul>
 
+    <!-- Optional: User info at bottom -->
+    <div class="sidebar-user-info" *ngIf="currentUser">
+      <div class="user-avatar">
+        <i class="nc-icon nc-circle-10"></i>
+      </div>
+      <div class="user-details">
+        <span class="user-name">{{currentUser.first_name}} {{currentUser.last_name}}</span>
+        <span class="user-role">{{currentUser.role || 'Trader'}}</span>
+      </div>
+    </div>
   </div>
 </div>

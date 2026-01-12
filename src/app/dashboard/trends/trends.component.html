@@ -1,0 +1,80 @@
+<mat-card class="trends-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>trending_up</mat-icon>
+      Tendances Émergentes du Marché
+    </mat-card-title>
+    <mat-card-subtitle>Analyse en temps réel propulsée par FinBERT AI</mat-card-subtitle>
+    <button mat-icon-button (click)="loadTrends()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Identification des tendances en cours...</p>
+    </div>
+
+    <div *ngIf="error && !loading" class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-raised-button color="primary" (click)="loadTrends()">
+        Réessayer
+      </button>
+    </div>
+
+    <div class="trends-list" *ngIf="!loading && !error && trends.length > 0">
+      <div *ngFor="let trend of trends; let i = index" class="trend-item" [ngClass]="getMomentumClass(trend.momentum)">
+        <div class="trend-rank">#{{ i + 1 }}</div>
+        <div class="trend-content">
+          <div class="trend-header">
+            <div class="trend-icon">
+              <mat-icon>{{ getMomentumIcon(trend.momentum) }}</mat-icon>
+            </div>
+            <div class="trend-info">
+              <h3>{{ trend.topic }}</h3>
+              <div class="meta-info">
+                <span class="article-count">
+                  <mat-icon>article</mat-icon>
+                  {{ trend.article_count }} articles
+                </span>
+                <span class="time-period">
+                  <mat-icon>schedule</mat-icon>
+                  {{ trend.time_period }}
+                </span>
+              </div>
+            </div>
+            <div class="momentum-badge">
+              <span class="momentum-value">{{ getMomentumPercentage(trend.momentum) }}%</span>
+              <span class="momentum-label">Momentum</span>
+            </div>
+          </div>
+
+          <div class="trend-details">
+            <div class="sentiment-indicators" *ngIf="trend.sentiment_trend && trend.sentiment_trend.length > 0">
+              <div *ngFor="let sentiment of trend.sentiment_trend.slice(0, 3)" 
+                   class="sentiment-pill"
+                   [ngClass]="sentiment.label">
+                <mat-icon>fiber_manual_record</mat-icon>
+                <span>{{ getSentimentText(sentiment.label) }}</span>
+                <span class="confidence">{{ (sentiment.score * 100).toFixed(0) }}%</span>
+              </div>
+            </div>
+            
+            <mat-progress-bar 
+              [mode]="'determinate'" 
+              [value]="getMomentumPercentage(trend.momentum)"
+              [ngClass]="getMomentumClass(trend.momentum)">
+            </mat-progress-bar>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && !error && trends.length === 0" class="no-data">
+      <mat-icon>info</mat-icon>
+      <p>Aucune tendance détectée pour le moment</p>
+    </div>
+  </mat-card-content>
+</mat-card>

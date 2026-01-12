@@ -188,11 +188,10 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             }, 
             grid: { 
-              color: 'rgba(255,255,255,0.05)'
-            },
-            border: {
-              display: false
+              color: 'rgba(255,255,255,0.05)',
+              drawBorder: false  // Added this instead of separate border property
             }
+            // REMOVED: border: { display: false }
           },
           y: { 
             ticks: { 
@@ -205,11 +204,10 @@ export class PortfolioComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             }, 
             grid: { 
-              color: 'rgba(255,255,255,0.05)'
-            },
-            border: {
-              display: false
+              color: 'rgba(255,255,255,0.05)',
+              drawBorder: false  // Added this instead of separate border property
             }
+            // REMOVED: border: { display: false }
           }
         }
       }

@@ -35,7 +35,8 @@
           View Details <i class="fas fa-arrow-right"></i>
         </button>
       </div>
-      <div class="card-content">
+      
+      <div class="card-content" *ngIf="!isLoadingPortfolio">
         <div class="balance-section">
           <div class="balance-label">Total Balance</div>
           <div class="balance-value">${{ totalBalance | number:'1.2-2' }}</div>
@@ -66,12 +67,12 @@
           <div class="stat-item">
             <div class="stat-label">Total Trades</div>
             <div class="stat-value">{{ recentTrades.length }}</div>
-            <div class="stat-percent">This Week</div>
+            <div class="stat-percent">Recent</div>
           </div>
         </div>
 
         <!-- Mini Performance Chart -->
-        <div class="mini-chart">
+        <div class="mini-chart" *ngIf="performanceChartData.values.length > 0">
           <div class="chart-placeholder">
             <svg viewBox="0 0 400 80" class="performance-svg">
               <polyline
@@ -83,14 +84,20 @@
                 stroke-linejoin="round"
               />
               <circle *ngFor="let val of performanceChartData.values; let i = index"
-                [attr.cx]="i * 80"
-                [attr.cy]="80 - (val - 95000) / 500"
+                [attr.cx]="(i / (performanceChartData.values.length - 1)) * 400"
+                [attr.cy]="80 - ((val - performanceChartData.values[0]) / (performanceChartData.values[performanceChartData.values.length - 1] - performanceChartData.values[0]) * 60)"
                 r="3"
                 fill="#00c896"
               />
             </svg>
           </div>
         </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="card-content loading-state" *ngIf="isLoadingPortfolio">
+        <div class="spinner"></div>
+        <p>Loading portfolio data...</p>
       </div>
     </div>
 
@@ -102,7 +109,8 @@
           Market Indices
         </h3>
       </div>
-      <div class="card-content">
+      
+      <div class="card-content" *ngIf="!isLoadingMarket && marketIndices.length > 0">
         <div class="indices-list">
           <div *ngFor="let index of marketIndices" class="index-item" (click)="navigateToTrade(index.symbol)">
             <div class="index-info">
@@ -119,6 +127,11 @@
           </div>
         </div>
       </div>
+
+      <div class="card-content loading-state" *ngIf="isLoadingMarket">
+        <div class="spinner-small"></div>
+        <p>Loading market data...</p>
+      </div>
     </div>
 
     <!-- Active Positions -->
@@ -130,14 +143,15 @@
         </h3>
         <button class="view-all-btn" (click)="navigateToPortfolio()">View All</button>
       </div>
-      <div class="card-content">
+      
+      <div class="card-content" *ngIf="!isLoadingPortfolio && activePositions.length > 0">
         <div class="positions-table">
           <div *ngFor="let position of activePositions" class="position-row" (click)="navigateToTrade(position.symbol)">
             <div class="position-symbol">
               <div class="symbol-badge">{{ position.symbol }}</div>
               <div class="symbol-name">{{ position.name }}</div>
             </div>
-            <div class="position-shares">{{ position.shares }} shares</div>
+            <div class="position-shares">{{ position.shares | number:'1.0-4' }} shares</div>
             <div class="position-value">${{ position.totalValue | number:'1.2-2' }}</div>
             <div class="position-profit" [class.positive]="position.profit >= 0" [class.negative]="position.profit < 0">
               <i [class]="position.profit >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
@@ -145,6 +159,16 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="card-content empty-state" *ngIf="!isLoadingPortfolio && activePositions.length === 0">
+        <i class="fas fa-inbox"></i>
+        <p>No active positions</p>
+        <button class="btn-small" (click)="navigateToTrade()">Start Trading</button>
+      </div>
+
+      <div class="card-content loading-state" *ngIf="isLoadingPortfolio">
+        <div class="spinner-small"></div>
       </div>
     </div>
 
@@ -158,21 +182,20 @@
       </div>
       <div class="card-content">
         <div class="movers-tabs">
-          <div class="tab active">Gainers</div>
-          <div class="tab">Losers</div>
+          <div class="tab active">Market Indices</div>
         </div>
         
-        <div class="movers-list gainers">
-          <div *ngFor="let gainer of topGainers" class="mover-item" (click)="navigateToTrade(gainer.symbol)">
+        <div class="movers-list gainers" *ngIf="marketIndices.length > 0">
+          <div *ngFor="let mover of marketIndices.slice(0, 3)" class="mover-item" (click)="navigateToTrade(mover.symbol)">
             <div class="mover-info">
-              <div class="mover-symbol">{{ gainer.symbol }}</div>
-              <div class="mover-name">{{ gainer.name }}</div>
+              <div class="mover-symbol">{{ mover.symbol }}</div>
+              <div class="mover-name">{{ mover.name }}</div>
             </div>
             <div class="mover-stats">
-              <div class="mover-price">${{ gainer.price | number:'1.2-2' }}</div>
-              <div class="mover-change positive">
-                <i class="fas fa-arrow-up"></i>
-                {{ gainer.changePercent | number:'1.2-2' }}%
+              <div class="mover-price">${{ mover.price | number:'1.2-2' }}</div>
+              <div class="mover-change" [class.positive]="mover.changePercent >= 0" [class.negative]="mover.changePercent < 0">
+                <i [class]="mover.changePercent >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                {{ mover.changePercent | number:'1.2-2' }}%
               </div>
             </div>
           </div>
@@ -189,21 +212,31 @@
         </h3>
         <button class="view-all-btn" (click)="navigateToPortfolio()">View All</button>
       </div>
-      <div class="card-content">
+      
+      <div class="card-content" *ngIf="!isLoadingPortfolio && recentTrades.length > 0">
         <div class="trades-table">
           <div *ngFor="let trade of recentTrades" class="trade-row">
             <div class="trade-type" [class.buy]="trade.type === 'buy'" [class.sell]="trade.type === 'sell'">
               {{ trade.type.toUpperCase() }}
             </div>
             <div class="trade-symbol">{{ trade.symbol }}</div>
-            <div class="trade-shares">{{ trade.shares }} shares</div>
+            <div class="trade-shares">{{ trade.shares | number:'1.0-4' }} shares</div>
             <div class="trade-price">${{ trade.price | number:'1.2-2' }}</div>
             <div class="trade-profit" [class.positive]="trade.profit && trade.profit >= 0" [class.negative]="trade.profit && trade.profit < 0">
-              {{ trade.profit ? (trade.profit >= 0 ? '+' : '') + (trade.profit | number:'1.2-2') : '-' }}
+              {{ trade.profit ? ((trade.profit >= 0 ? '+' : '') + (trade.profit | number:'1.2-2')) : '-' }}
             </div>
             <div class="trade-time">{{ getTimeAgo(trade.date) }}</div>
           </div>
         </div>
+      </div>
+
+      <div class="card-content empty-state" *ngIf="!isLoadingPortfolio && recentTrades.length === 0">
+        <i class="fas fa-receipt"></i>
+        <p>No recent trades</p>
+      </div>
+
+      <div class="card-content loading-state" *ngIf="isLoadingPortfolio">
+        <div class="spinner-small"></div>
       </div>
     </div>
 
@@ -216,7 +249,8 @@
         </h3>
         <button class="view-all-btn" (click)="navigateToTrade()">View All</button>
       </div>
-      <div class="card-content">
+      
+      <div class="card-content" *ngIf="!isLoadingWatchlist && watchlist.length > 0">
         <div class="watchlist-items">
           <div *ngFor="let item of watchlist" class="watchlist-item" (click)="navigateToTrade(item.symbol)">
             <div class="watchlist-symbol">{{ item.symbol }}</div>
@@ -227,6 +261,15 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="card-content empty-state" *ngIf="!isLoadingWatchlist && watchlist.length === 0">
+        <i class="fas fa-eye"></i>
+        <p>No items in watchlist</p>
+      </div>
+
+      <div class="card-content loading-state" *ngIf="isLoadingWatchlist">
+        <div class="spinner-small"></div>
       </div>
     </div>
 
@@ -239,7 +282,8 @@
         </h3>
         <button class="view-all-btn" (click)="viewAllNews()">View All</button>
       </div>
-      <div class="card-content">
+      
+      <div class="card-content" *ngIf="!isLoadingNews && marketNews.length > 0">
         <div class="news-list">
           <div *ngFor="let news of marketNews" class="news-item" [ngClass]="getSentimentClass(news.sentiment)">
             <div class="news-sentiment">{{ getSentimentIcon(news.sentiment) }}</div>
@@ -252,6 +296,15 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="card-content empty-state" *ngIf="!isLoadingNews && marketNews.length === 0">
+        <i class="fas fa-newspaper"></i>
+        <p>No news available</p>
+      </div>
+
+      <div class="card-content loading-state" *ngIf="isLoadingNews">
+        <div class="spinner-small"></div>
       </div>
     </div>
 

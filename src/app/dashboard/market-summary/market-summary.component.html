@@ -1,0 +1,193 @@
+<mat-card class="market-summary-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>assessment</mat-icon>
+      Résumé du Sentiment du Marché
+    </mat-card-title>
+    <button mat-icon-button (click)="loadSummary()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Analyse des actualités en cours...</p>
+    </div>
+
+    <div *ngIf="error && !loading" class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-raised-button color="primary" (click)="loadSummary()">
+        Réessayer
+      </button>
+    </div>
+
+    <div *ngIf="summary && !loading" class="summary-content">
+      <!-- Signal de Trading -->
+      <div class="trading-signal-banner" *ngIf="summary.trading_signal" [ngClass]="getSignalClass(summary.trading_signal)">
+        <div class="signal-icon">
+          <mat-icon>{{ getSignalIcon(summary.trading_signal) }}</mat-icon>
+        </div>
+        <div class="signal-content">
+          <div class="signal-header">
+            <span class="signal-label">{{ getSignalLabel(summary.trading_signal) }}</span>
+            <span class="risk-badge" [ngClass]="getRiskClass(summary.risk_level)">
+              <mat-icon>{{ getRiskIcon(summary.risk_level) }}</mat-icon>
+              {{ getRiskLabel(summary.risk_level) }}
+            </span>
+          </div>
+          <p class="recommendation">{{ summary.recommendation }}</p>
+        </div>
+      </div>
+
+      <!-- Sentiment Global -->
+      <div class="overall-sentiment" [ngClass]="getSentimentClass(summary.overall_sentiment)">
+        <mat-icon class="sentiment-icon">{{ getSentimentIcon(summary.overall_sentiment) }}</mat-icon>
+        <div class="sentiment-info">
+          <h2>{{ summary.overall_sentiment | uppercase }}</h2>
+          <p class="confidence">Confiance: {{ getConfidencePercentage() }}%</p>
+        </div>
+      </div>
+
+      <!-- Statistiques -->
+      <div class="statistics">
+        <div class="stat-card positive">
+          <mat-icon>thumb_up</mat-icon>
+          <div class="stat-content">
+            <span class="stat-value">{{ summary.positive_count }}</span>
+            <span class="stat-label">Positif</span>
+          </div>
+        </div>
+
+        <div class="stat-card neutral">
+          <mat-icon>remove</mat-icon>
+          <div class="stat-content">
+            <span class="stat-value">{{ summary.neutral_count }}</span>
+            <span class="stat-label">Neutre</span>
+          </div>
+        </div>
+
+        <div class="stat-card negative">
+          <mat-icon>thumb_down</mat-icon>
+          <div class="stat-content">
+            <span class="stat-value">{{ summary.negative_count }}</span>
+            <span class="stat-label">Négatif</span>
+          </div>
+        </div>
+
+        <div class="stat-card total">
+          <mat-icon>article</mat-icon>
+          <div class="stat-content">
+            <span class="stat-value">{{ summary.total_articles }}</span>
+            <span class="stat-label">Total Articles</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sujets Tendance -->
+      <div class="trending-topics" *ngIf="summary.trending_topics.length > 0">
+        <h3>
+          <mat-icon>whatshot</mat-icon>
+          Sujets Tendance
+        </h3>
+        <mat-chip-set>
+          <mat-chip *ngFor="let topic of summary.trending_topics">
+            {{ topic }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Indicateurs Avancés -->
+      <div class="advanced-indicators" *ngIf="summary.market_fear_greed !== undefined">
+        <h3>
+          <mat-icon>insights</mat-icon>
+          Indicateurs Avancés
+        </h3>
+        
+        <div class="indicator-grid">
+          <!-- Fear & Greed Index -->
+          <div class="indicator-card">
+            <div class="indicator-header">
+              <mat-icon>psychology</mat-icon>
+              <span>Indice Peur/Avidité</span>
+            </div>
+            <div class="indicator-value" [ngClass]="getFearGreedClass(summary.market_fear_greed)">
+              {{ summary.market_fear_greed?.toFixed(0) }}
+            </div>
+            <div class="indicator-bar">
+              <div class="bar-fill" [style.width.%]="summary.market_fear_greed"></div>
+            </div>
+            <div class="indicator-label">{{ getFearGreedLabel(summary.market_fear_greed) }}</div>
+          </div>
+
+          <!-- Sentiment Momentum -->
+          <div class="indicator-card">
+            <div class="indicator-header">
+              <mat-icon>trending_up</mat-icon>
+              <span>Momentum Sentiment</span>
+            </div>
+            <div class="indicator-value" [ngClass]="getMomentumClass(summary.sentiment_momentum)">
+              {{ ((summary.sentiment_momentum || 0) * 100).toFixed(0) }}%
+            </div>
+            <div class="indicator-bar">
+              <div class="bar-fill momentum" [style.width.%]="getMomentumWidth(summary.sentiment_momentum)"></div>
+            </div>
+            <div class="indicator-label">{{ getMomentumLabel(summary.sentiment_momentum) }}</div>
+          </div>
+
+          <!-- Volatility Index -->
+          <div class="indicator-card">
+            <div class="indicator-header">
+              <mat-icon>show_chart</mat-icon>
+              <span>Indice Volatilité</span>
+            </div>
+            <div class="indicator-value volatility">
+              {{ summary.volatility_index?.toFixed(0) }}
+            </div>
+            <div class="indicator-bar">
+              <div class="bar-fill volatility" [style.width.%]="summary.volatility_index"></div>
+            </div>
+            <div class="indicator-label">{{ getVolatilityLabel(summary.volatility_index) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signal de Trading -->
+      <div class="trading-signal" *ngIf="summary.trading_signal">
+        <h3>
+          <mat-icon>show_chart</mat-icon>
+          Recommandation de Trading
+        </h3>
+        
+        <div class="signal-card" [ngClass]="getSignalClass(summary.trading_signal)">
+          <div class="signal-header">
+            <div class="signal-badge">
+              <mat-icon>{{ getSignalIcon(summary.trading_signal) }}</mat-icon>
+              <span class="signal-label">{{ getSignalLabel(summary.trading_signal) }}</span>
+            </div>
+            <div class="risk-badge" [ngClass]="getRiskClass(summary.risk_level)">
+              <mat-icon>warning</mat-icon>
+              <span>Risque: {{ getRiskLabel(summary.risk_level) }}</span>
+            </div>
+          </div>
+          
+          <div class="signal-recommendation">
+            <p>{{ summary.recommendation }}</p>
+          </div>
+          
+          <div class="signal-disclaimer">
+            <mat-icon>info</mat-icon>
+            <span>Cette recommandation est basée sur l'analyse de sentiment IA et ne constitue pas un conseil financier. Faites vos propres recherches.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timestamp -->
+      <div class="timestamp">
+        <mat-icon>schedule</mat-icon>
+        Dernière mise à jour: {{ summary.timestamp | date:'short' }}
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

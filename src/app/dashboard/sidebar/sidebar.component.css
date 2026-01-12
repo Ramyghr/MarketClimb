@@ -10,7 +10,6 @@
   transition: width 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
-  align-items: center;
   z-index: 1000;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -21,6 +20,19 @@
   box-shadow: 4px 0 12px rgba(0, 0, 0, 0.4);
 }
 
+/* ===== SIDEBAR CONTENT ===== */
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+  padding-top: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+}
+
 /* ===== LOGO ===== */
 .sidebar-logo {
   display: flex;
@@ -29,6 +41,7 @@
   padding: 25px 0;
   width: 100%;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .logo-img {
@@ -45,53 +58,43 @@
 }
 
 /* ===== MENU ===== */
-.sidebar-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  width: 100%;
-  padding-top: 20px;
-}
-
 .menu {
   list-style: none;
   padding: 0;
   margin: 0;
   width: 100%;
+  flex: 1;
 }
 
-.menu li {
+/* ===== MENU SECTIONS ===== */
+.menu-section {
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-header {
   display: flex;
   align-items: center;
   padding: 14px 20px;
   cursor: pointer;
   color: #e5e7eb;
-  font-weight: 500;
+  font-weight: 600;
+  transition: background 0.25s ease;
   border-left: 3px solid transparent;
-  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
-.menu li:hover,
-.menu li.active {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-left-color: #00c8ff;
+.menu-header:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-.menu i {
+.menu-header i:first-child {
   font-size: 1.3rem;
   color: #b0b0b0;
   min-width: 25px;
   text-align: center;
-  transition: color 0.3s ease;
 }
 
-.menu li:hover i {
-  color: #00c8ff;
-}
-
-/* ===== TEXT ===== */
-.menu-text {
+.menu-header .menu-text {
   margin-left: 15px;
   white-space: nowrap;
   opacity: 0;
@@ -99,9 +102,115 @@
   font-size: 0.95rem;
   transition: opacity 0.3s ease, transform 0.3s ease;
   transform: translateX(-10px);
+  flex: 1;
 }
 
-.sidebar:hover .menu-text {
+.sidebar:hover .menu-header .menu-text {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* ===== SECTION ARROW ===== */
+.section-arrow {
+  font-size: 0.9rem;
+  color: #888;
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.sidebar:hover .section-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.section-arrow.rotated {
+  transform: rotate(-90deg) !important;
+}
+
+/* ===== SECTION ITEMS ===== */
+.section-items {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  max-height: 500px; /* Adjust based on content */
+}
+
+/* .section-items.collapsed {
+  max-height: 0;
+} */
+
+.section-items li {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 12px 40px; /* Indented for sub-items */
+  cursor: pointer;
+  color: #e5e7eb;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: background 0.25s ease, border-color 0.25s ease;
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.section-items li:hover,
+.section-items li.active {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-left-color: #00c8ff;
+}
+
+.section-items li i {
+  font-size: 1.2rem;
+  color: #b0b0b0;
+  min-width: 25px;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.section-items li:hover i {
+  color: #00c8ff;
+}
+
+.section-items .menu-text {
+  margin-left: 15px;
+  white-space: nowrap;
+  opacity: 0;
+  color: #f1f1f1;
+  font-size: 0.9rem;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(-10px);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar:hover .section-items .menu-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ===== USER INFO ===== */
+.sidebar-user-info {
+  padding: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+.sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
